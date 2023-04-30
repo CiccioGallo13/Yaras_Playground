@@ -1,8 +1,4 @@
-from typing import List
-
-import yara
 from pydantic import BaseModel
-from pydantic.dataclasses import dataclass
 
 
 # class for the json mapping

@@ -2,13 +2,14 @@
     import { Button, Card, CardBody, CardFooter, CardHeader, CardTitle, Col, Container, FormGroup, FormText, Input, Label, Row, Styles } from 'sveltestrap';
     import type { Color } from 'sveltestrap/src/shared';
     import type { JsonRequest } from './+page';
-    import sendData from './+page';
+    import { _sendData } from './+page';
+    import type { JsonResponse, Match, StringMatch, StringMatchIntance } from './+page';
 
     const color: Color = 'dark';
-
     let files: FileList;
     let dataTextArea: string;
     let rulesTextArea: string;
+    let completeScan: boolean = false;
     function fileScan(who: string): any{
         var result: string  = '';
         if(files){
@@ -39,25 +40,26 @@
             
         }
     }
-
-    let matches = []
+    let matches: JsonResponse;
     
     async function scanData() {
         let jsonRequest: JsonRequest = {
             rules: rulesTextArea,
             data: dataTextArea,
-            complete_scan: false
+            complete_scan: completeScan
         }
+
+        console.log(jsonRequest);
         
-        sendData(jsonRequest).then((response) => {
-            matches = response.matches;
-            console.log(matches);
+        _sendData(jsonRequest).then((response) => {
+            //matches = response;
+            console.log(response);
         
         }
         , (error) => {
         console.log(error);
         });
-    
+
     }
 </script>
 
@@ -90,7 +92,7 @@
             <Container>
                 <Col sm={{ size: 'auto', offset: 1}}>
                     <FormGroup>
-                        <Label for="dataTextArea">Data</Label>
+                        <Label for="dataTextArea">Data</Label> false
                         <Input type="textarea" name="text" id="dataTextArea" bind:value={dataTextArea} style="min-height:100pt; max-height:400pt"/>
                     </FormGroup>
                     <div class="options">
@@ -112,7 +114,7 @@
     <div class="centered" style="padding-top: 0cm;">
         <Col sm={{ size: 'auto'}}>
             <FormGroup>
-                <Input id="completeScanCheckBox" type="checkbox" label="Complete scan" />
+                <Input id="completeScanCheckBox" type="checkbox" bind:checked={completeScan} label="Complete scan" />
             </FormGroup>
         </Col>
     </div>
@@ -128,16 +130,12 @@
 </Card>
 
 <style>
-
     .options {
         padding-top: 0.6cm;
     }
-
     .centered {
         display: flex;
         justify-content: center;
         align-items: center;
 }
-
-
 </style>

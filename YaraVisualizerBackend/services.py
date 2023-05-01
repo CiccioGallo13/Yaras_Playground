@@ -29,7 +29,7 @@ def scan_files():
     return rules_files
 
 
-def create_iterable_object(matches_: any):
+def create_iterable_object(matches_: [yara.Match]):
     custom_matches = []
     for x in matches_:
         custom_string_matches = []

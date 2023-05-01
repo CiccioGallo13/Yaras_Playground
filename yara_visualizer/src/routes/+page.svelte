@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Button, Card, CardBody, CardFooter, CardHeader, CardTitle, Col, Container, FormGroup, FormText, Input, Label, Row, Styles } from 'sveltestrap';
+    import { Button, Card, CardBody, CardFooter, CardHeader, CardTitle, Col, Container, FormGroup, FormText, Input, Label, Row, Styles, Table } from 'sveltestrap';
     import type { Color } from 'sveltestrap/src/shared';
     import type { JsonRequest } from './+page';
     import { _sendData } from './+page';
@@ -10,6 +10,7 @@
     let dataTextArea: string;
     let rulesTextArea: string;
     let completeScan: boolean = false;
+    let renderTable: boolean = false;
     function fileScan(who: string): any{
         var result: string  = '';
         if(files){
@@ -52,8 +53,9 @@
         console.log(jsonRequest);
         
         _sendData(jsonRequest).then((response) => {
-            //matches = response;
+            matches = response;
             console.log(response);
+            renderTable = true;
         
         }
         , (error) => {
@@ -61,6 +63,7 @@
         });
 
     }
+
 </script>
 
 <Styles />
@@ -92,7 +95,7 @@
             <Container>
                 <Col sm={{ size: 'auto', offset: 1}}>
                     <FormGroup>
-                        <Label for="dataTextArea">Data</Label> false
+                        <Label for="dataTextArea">Data</Label>
                         <Input type="textarea" name="text" id="dataTextArea" bind:value={dataTextArea} style="min-height:100pt; max-height:400pt"/>
                     </FormGroup>
                     <div class="options">
@@ -128,7 +131,34 @@
 </CardFooter>
 
 </Card>
-
+{#if renderTable}
+<Container>
+<Table>
+    <thead>
+        <tr>
+            <th>Encoding</th>
+            <th>Data</th>
+            <th>Matched rules</th>
+        </tr>
+    </thead>
+    <tbody>
+        {#each matches.matches as match}
+        <tr>
+            <td>encoding</td>
+            <td>
+                {#each match.string_match as string_match}
+                    {#each string_match.instances as instance}
+                        <p>{instance.matched_data}</p>
+                    {/each}
+                {/each}
+            </td>
+            <td>{match.rule}</td>
+        </tr>
+        {/each}
+    </tbody>
+</Table>
+</Container>
+{/if}
 <style>
     .options {
         padding-top: 0.6cm;

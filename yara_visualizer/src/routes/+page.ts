@@ -12,8 +12,8 @@ export interface StringMatchIntance {
     offset: number
     xor_key: number
     plaintext: string
-
 }
+
 export interface StringMatch {
 
     identifier: string
@@ -45,3 +45,4 @@ export async function _sendData(jsonRequest: JsonRequest) {
     return await response.json() as JsonResponse;
     
 }
+ 

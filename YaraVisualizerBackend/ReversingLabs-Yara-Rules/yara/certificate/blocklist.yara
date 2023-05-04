@@ -26,10 +26,10 @@ import "pe"
 
 rule scratch {
     meta:
-        author      = "SIONOSIONO"
+        author      = "JFK"
 
     strings:
-        $a = "onti"
+        $a = "dallas"
 
     condition:
         $a

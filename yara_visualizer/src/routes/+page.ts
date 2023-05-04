@@ -45,4 +45,3 @@ export async function _sendData(jsonRequest: JsonRequest) {
     return await response.json() as JsonResponse;
     
 }
- 

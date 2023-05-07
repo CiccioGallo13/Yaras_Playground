@@ -1,3 +1,5 @@
+import enum
+
 from pydantic import BaseModel
 
 
@@ -28,5 +30,20 @@ class CustomMatch(BaseModel):
     string_match: list[CustomStringMatch]
 
 
-class ResponseModel(BaseModel):
+class Encodings(enum.Enum):
+    HEX = "hex"
+    BINARY = "binary"
+    ASCII = "ascii"
+    UTF8 = "utf-8"
+    UTF16 = "utf-16"
+    UTF32 = "utf-32"
+    RAW = "raw"
+
+
+class EncodingMatch(BaseModel):
     matches: list[CustomMatch]
+    encoding: Encodings
+
+
+class ResponseModel(BaseModel):
+    encoding_matches: list[EncodingMatch]

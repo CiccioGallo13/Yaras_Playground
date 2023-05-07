@@ -3,6 +3,7 @@ import http
 from fastapi import FastAPI
 from starlette.responses import JSONResponse
 
+import models
 from models import RequestModel
 import services
 
@@ -48,4 +49,9 @@ async def say_hello(name: str):
 # return the matching rules
 @app.post("/set/json/")
 async def upload_json(file: RequestModel):
-    return services.match(file)
+    return services.analyze_data(file)
+
+
+@app.post("/set/json/encode")
+async def upload_json(file: RequestModel):
+    return services.encode_data(file, models.Encodings.RAW)

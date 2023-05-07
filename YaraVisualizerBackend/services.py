@@ -1,26 +1,35 @@
 import yara
 import os
-from models import RequestModel, CustomMatch, CustomStringMatch, CustomStringMatchInstance, ResponseModel
+from models import RequestModel, CustomMatch, CustomStringMatch, CustomStringMatchInstance, EncodingMatch, \
+    ResponseModel, Encodings
 import utils
 
 
+def analyze_data(obj: RequestModel):
+    encoding_matches: list[EncodingMatch] = []
+    for encoding in Encodings:
+        encoding_matches.append(EncodingMatch(matches=match(obj.rules, encode_data(obj, encoding), obj.complete_scan),
+                                              encoding=encoding))
+    return ResponseModel(encoding_matches=encoding_matches)
+
+
 # configure the yara module and check the data
-def match(obj: RequestModel):
+def match(rules: str, data: str, complete_scan: bool):
     response: list[CustomMatch] = []
 
     # scan using rules in the directory 'ReversingLabs-Yara-Rules'
-    if obj.complete_scan:
+    if complete_scan:
         rule = yara.compile(filepaths=scan_files())
-        matches = rule.match(data=obj.data)
-        response += create_iterable_object(matches)  ## if multiple matching are found it stucks here
+        matches = rule.match(data=data)
+        response += create_iterable_object(matches)
 
     # scan using custom rules sent in the json request
-    if obj.rules:
-        rule = yara.compile(source=obj.rules)
-        matches = rule.match(data=obj.data)
-        response += create_iterable_object(matches)  ## if multiple matching are found it stucks here
+    if rules:
+        rule = yara.compile(source=rules)
+        matches = rule.match(data=data)
+        response += create_iterable_object(matches)
 
-    return ResponseModel(matches=response)
+    return response
 
 
 # create a dictionary with all the 'filename': 'filepath' of the rules used from ReversingLabs (
@@ -32,6 +41,24 @@ def scan_files():
         for file in os.listdir(path + '/' + dir):
             rules_files.update({os.path.splitext(file)[0]: path + '/' + dir + '/' + file})
     return rules_files
+
+
+def encode_data(obj: RequestModel, encoding: Encodings):
+    match encoding:
+        case Encodings.HEX:
+            return utils.string_to_hex(obj.data)
+        case Encodings.BINARY:
+            return utils.string_to_binary(obj.data)
+        case Encodings.ASCII:
+            return utils.string_to_ascii(obj.data)
+        case Encodings.UTF8:
+            return utils.string_to_utf8(obj.data)
+        case Encodings.UTF16:
+            return utils.string_to_utf16(obj.data)
+        case Encodings.UTF32:
+            return utils.string_to_utf32(obj.data)
+        case Encodings.RAW:
+            return obj.data
 
 
 def create_iterable_object(matches_: list[yara.Match]):

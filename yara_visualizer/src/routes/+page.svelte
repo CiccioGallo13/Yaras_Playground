@@ -167,7 +167,32 @@
 {/if}
 
 
-
+<Table>
+    <thead>
+      <tr>
+        <th>Encoding</th>
+        <th>Data</th>
+        <th>Matched Rules</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th scope="row">HEX</th>
+        <td>Mark</td>
+        <td>Otto</td>
+      </tr>
+      <tr>
+        <th scope="row">Utf-8</th>
+        <td>Jacob</td>
+        <td>Thornton</td>
+      </tr>
+      <tr>
+        <th scope="row">3</th>
+        <td>Larry</td>
+        <td>the Bird</td>
+      </tr>
+    </tbody>
+  </Table>
 <style>
     .options {
         padding-top: 0.6cm;

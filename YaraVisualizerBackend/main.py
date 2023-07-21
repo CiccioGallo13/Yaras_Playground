@@ -4,18 +4,17 @@ from fastapi import FastAPI
 from starlette.responses import JSONResponse
 
 import models
-from models import RequestModel
 import services
 
 from fastapi.middleware.cors import CORSMiddleware
+import uvicorn
 
 app = FastAPI()
-
 origins = [
     "http://localhost.tiangolo.com",
     "https://localhost.tiangolo.com",
     "http://localhost:1313",
-    "http://localhost:8080",
+    "http://localhost:8000",
 ]
 
 app.add_middleware(
@@ -48,10 +47,10 @@ async def say_hello(name: str):
 # receives a json file with custom rules, data to analyze and some options
 # return the matching rules
 @app.post("/set/json/")
-async def upload_json(file: RequestModel):
+async def upload_json(file: models.RequestModel):
     return services.analyze_data(file)
 
 
 @app.post("/set/json/encode")
-async def upload_json(file: RequestModel):
+async def upload_json(file: models.RequestModel):
     return services.encode_data(file, models.Encodings.RAW)

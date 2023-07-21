@@ -13,7 +13,7 @@ def analyze_data(obj: RequestModel):
     return ResponseModel(encoding_matches=encoding_matches)
 
 
-# configure the yara module and check the data
+# configure the yara-rules module and check the data
 def match(rules: str, data: str, complete_scan: bool):
     response: list[CustomMatch] = []
 
@@ -35,7 +35,7 @@ def match(rules: str, data: str, complete_scan: bool):
 # create a dictionary with all the 'filename': 'filepath' of the rules used from ReversingLabs (
 # https://github.com/reversinglabs/reversinglabs-yara-rules.git)
 def scan_files():
-    path = 'ReversingLabs-Yara-Rules/yara'
+    path = 'ReversingLabs-Yara-Rules/yara-rules'
     rules_files: dict = {}
     for dir in os.listdir(path):
         for file in os.listdir(path + '/' + dir):
@@ -62,9 +62,9 @@ def encode_data(obj: RequestModel, encoding: Encodings):
 
 
 def create_iterable_object(matches_: list[yara.Match]):
-    # since the nested object inside yara's response are not serializable, here is the conversion in custom objects
+    # since the nested object inside yara-rules's response are not serializable, here is the conversion in custom objects
     # the class declarations of these custom objs are in models.py file
-    # the original yara objs structure is at https://yara.readthedocs.io/en/stable/yarapython.html
+    # the original yara-rules objs structure is at https://yara.readthedocs.io/en/stable/yarapython.html
     custom_matches = []
     for x in matches_:
         custom_string_matches = []

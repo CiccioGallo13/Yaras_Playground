@@ -4,7 +4,7 @@ export interface JsonRequest {
     complete_scan: boolean;
 }
 
-export interface StringMatchIntance {
+export interface StringMatchInstance {
     matched_data: string
     matched_length: number
     offset: number
@@ -16,7 +16,7 @@ export interface StringMatch {
 
     identifier: string
     is_xor: boolean
-    instances: StringMatchIntance[]
+    instances: StringMatchInstance[]
 }
 
 export interface Match {
@@ -43,4 +43,10 @@ export interface EncodingMatch {
 
 export interface JsonResponse {
     encoding_matches: EncodingMatch[];
+}
+
+export interface HighlightedMatches {
+    rule?: string;
+    meta?: string;
+    higlighted_string: string;
 }

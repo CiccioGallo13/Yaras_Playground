@@ -2,7 +2,8 @@
     import { Button, Card, CardBody, CardFooter, CardHeader, CardTitle, Col, Container, FormGroup, FormText, Input, Label, Row, Styles, Table } from 'sveltestrap';
     import type { Color } from 'sveltestrap/src/shared';
     import { _sendData } from './+page';
-    import type { JsonRequest, JsonResponse, Match, StringMatch, StringMatchIntance } from '../model/model';
+    import type { JsonRequest, JsonResponse, HighlightedMatches } from '../model/model';
+    import { _highlightWordByOffset } from './+page';
 
     const color: Color = 'dark';
     let files: FileList;
@@ -40,7 +41,9 @@
             
         }
     }
-    let matches: JsonResponse;
+    let matches: JsonResponse
+    let higlightedText: Map<string, HighlightedMatches[]>
+
     
     async function scanData() {
         let jsonRequest: JsonRequest = {
@@ -52,7 +55,8 @@
         console.log(jsonRequest);
         
         _sendData(jsonRequest).then((response) => {
-            matches = response;
+            matches = response
+            higlightedText = preProcessMatch(matches);
             console.log(response);
             renderTable = true;
         
@@ -61,6 +65,44 @@
         console.log(error);
         });
 
+    }
+
+    
+    function preProcessMatch(matches: JsonResponse): Map<string, HighlightedMatches[] > {
+        let highlightedTextMap: Map<string, HighlightedMatches[]> = new Map<string, HighlightedMatches[] >();
+
+        matches.encoding_matches.forEach((element) => {
+            let highlightedMatches: HighlightedMatches[] = [];
+            element.matches.forEach((match) => {
+                
+                let highlighted: string = dataTextArea;
+                let offsetDiff = 0;
+            match.string_match.forEach((stringMatch) => {
+                stringMatch.instances.forEach((instance) => {
+                const highlightedInstance = _highlightWordByOffset(
+                    highlighted,
+                    instance.offset + offsetDiff,
+                    instance.matched_length
+                );
+                highlighted = highlightedInstance;
+                offsetDiff += 13;
+                });
+                highlightedMatches.push({
+                rule: match.rule,
+                meta: match.meta,
+                higlighted_string: highlighted,
+                });
+            });
+            });
+            if( highlightedMatches.length != 0 ){
+                highlightedTextMap.set(element.encoding, highlightedMatches);
+            }else
+            {
+                highlightedTextMap.set(element.encoding, new Array<HighlightedMatches>( {rule: undefined, meta: undefined, higlighted_string: ""} )  );
+            }
+        });
+
+        return highlightedTextMap;
     }
 
 </script>
@@ -127,7 +169,6 @@
     </div>
     </Row>
 </CardFooter>
-
 </Card>
 {#if renderTable}
 <Container>
@@ -141,20 +182,16 @@
         </tr>
     </thead>
     <tbody>
-        {#each matches.encoding_matches as match}
+        {#each matches.encoding_matches as _match}
         <tr>
-            <td>{match.encoding}</td>
+            <td>{_match.encoding}</td>
             <td>
-                {#each match.matches as dataMatch}
-                    {#each dataMatch.string_match as stringMatch}
-                        {#each stringMatch.instances as instance}
-                            <p>{instance.matched_data}</p>
-                        {/each}
-                    {/each}
+                {#each higlightedText.get(_match.encoding) as highlightedMatch}
+                    <p>{highlightedMatch.highlighted_string}</p>
                 {/each}
             </td>
             <td>
-                {#each match.matches as dataMatch}
+                {#each _match.matches as dataMatch}
                     <p>{dataMatch.rule}</p>
                 {/each}
             </td>
@@ -167,32 +204,6 @@
 {/if}
 
 
-<Table>
-    <thead>
-      <tr>
-        <th>Encoding</th>
-        <th>Data</th>
-        <th>Matched Rules</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <th scope="row">HEX</th>
-        <td>Mark</td>
-        <td>Otto</td>
-      </tr>
-      <tr>
-        <th scope="row">Utf-8</th>
-        <td>Jacob</td>
-        <td>Thornton</td>
-      </tr>
-      <tr>
-        <th scope="row">3</th>
-        <td>Larry</td>
-        <td>the Bird</td>
-      </tr>
-    </tbody>
-  </Table>
 <style>
     .options {
         padding-top: 0.6cm;

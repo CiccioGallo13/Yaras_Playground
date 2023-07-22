@@ -9,7 +9,7 @@ export async function _sendData(jsonRequest: JsonRequest) {
             'Content-Type': 'application/json'
         }
     });
-
+  
     return await response.json() as JsonResponse;
     
 }
@@ -37,4 +37,5 @@ export function _highlightInstances(text: string, instances: StringMatchInstance
     highlightedParts.push(text.slice(lastIndex));
     return highlightedParts.join('');
   }
-  
+
+

@@ -5,6 +5,7 @@
     import type { JsonRequest, JsonResponse, HighlightedMatches } from '../model/model';
     import { _highlightWordByOffset } from './+page';
 
+
     const color: Color = 'dark';
     let files: FileList;
     let dataTextArea: string;
@@ -90,7 +91,7 @@
                 highlightedMatches.push({
                 rule: match.rule,
                 meta: match.meta,
-                higlighted_string: highlighted,
+                highlighted_string: highlighted,
                 });
             });
             });
@@ -98,7 +99,7 @@
                 highlightedTextMap.set(element.encoding, highlightedMatches);
             }else
             {
-                highlightedTextMap.set(element.encoding, new Array<HighlightedMatches>( {rule: undefined, meta: undefined, higlighted_string: ""} )  );
+                highlightedTextMap.set(element.encoding, new Array<HighlightedMatches>( {rule: undefined, meta: undefined, highlighted_string: "No matched data"} )  );
             }
         });
 
@@ -186,9 +187,11 @@
         <tr>
             <td>{_match.encoding}</td>
             <td>
-                {#each higlightedText.get(_match.encoding) as highlightedMatch}
-                    <p>{highlightedMatch.highlighted_string}</p>
+                <div class="scrollable-content">
+                {#each higlightedText.get(_match.encoding) || [] as highlightedMatch}
+                    <p>{@html highlightedMatch.highlighted_string}</p>
                 {/each}
+                </div>
             </td>
             <td>
                 {#each _match.matches as dataMatch}
@@ -212,5 +215,11 @@
         display: flex;
         justify-content: center;
         align-items: center;
+    }
+    .scrollable-content {
+        max-width: 900px;
+        word-wrap: break-word;
+        max-height: 200px;
+        overflow-y: auto;
     }
 </style>

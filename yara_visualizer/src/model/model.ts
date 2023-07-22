@@ -48,5 +48,5 @@ export interface JsonResponse {
 export interface HighlightedMatches {
     rule?: string;
     meta?: string;
-    higlighted_string: string;
+    highlighted_string: string;
 }

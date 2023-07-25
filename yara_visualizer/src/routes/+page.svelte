@@ -1,7 +1,7 @@
 <script lang="ts">
-    import { Button, Card, CardBody, CardFooter, CardHeader, CardTitle, Col, Container, FormGroup, FormText, Input, Label, Row, Styles, Table } from 'sveltestrap';
+    import { Button, ButtonGroup, ButtonToolbar, Card, CardBody, CardFooter, CardHeader, CardTitle, Col, Container, FormGroup, FormText, Input, Label, Row, Styles, Table } from 'sveltestrap';
     import type { Color } from 'sveltestrap/src/shared';
-    import { _sendData } from './+page';
+    import { _sendData, _encodeString } from './+page';
     import type { JsonRequest, JsonResponse, HighlightedMatches } from '../model/model';
     import { _highlightWordByOffset } from './+page';
 
@@ -76,7 +76,7 @@
             let highlightedMatches: HighlightedMatches[] = [];
             element.matches.forEach((match) => {
                 
-                let highlighted: string = dataTextArea;
+                let highlighted: string = _encodeString(dataTextArea, element.encoding);
                 let offsetDiff = 0;
             match.string_match.forEach((stringMatch) => {
                 stringMatch.instances.forEach((instance) => {
@@ -108,19 +108,20 @@
 
 </script>
 
+<body>
+
 <Styles />
 
-<Card class="mx-auto" style="border-radius: 0;">
-    <CardHeader>
-        <CardTitle style="text-align: center;">YARA VISUALIZER</CardTitle>
-    </CardHeader>
+
+<Card class="mx-auto" style="border-radius: 0; background-color: var(--color-verylight)">
     <CardBody>
         <Row cols={2}>
-            <Container>
+            <Container style="background-color: var(--color-verylight)">
                 <Col sm={{ size: 'auto', offset: 1 }}>
                     <FormGroup>
                         <Label for="rulesTextArea">Rules</Label>
-                        <Input type="textarea" name="text" id="rulesTextArea" bind:value={rulesTextArea} style="min-height:100pt; max-height:400pt"/>
+                        <Input type="textarea" name="text" id="rulesTextArea" bind:value={rulesTextArea} 
+                        style="min-height:100pt; max-height:400pt"/>
                     </FormGroup>
                     <div class="options">
                         <FormGroup>
@@ -133,6 +134,7 @@
 
                 </Col>
             </Container>
+        
 
             <Container>
                 <Col sm={{ size: 'auto', offset: 1}}>
@@ -165,7 +167,7 @@
     
     <div class="centered">
         <Col sm={{ size: 'auto'}}>
-            <Button {color} style="width: 130pt" on:click={scanData}>Scan</Button>
+            <Button style="width: 130pt; color: var(--color-lightest); background-color: var(--color-strongest)" on:click={scanData}>Scan</Button>
         </Col>
     </div>
     </Row>
@@ -205,7 +207,7 @@
 </div>
 </Container>
 {/if}
-
+</body>
 
 <style>
     .options {
@@ -222,4 +224,11 @@
         max-height: 200px;
         overflow-y: auto;
     }
+
+    body {
+    background-color: var(--color-verylight);
+    color: var(--color-strongest);
+    }
+
+
 </style>

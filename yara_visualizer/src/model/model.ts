@@ -29,15 +29,15 @@ export enum Encoding {
     HEX = "hex",
     BINARY = "binary",
     ASCII = "ascii",
-    UTF8 = "utf8",
-    UTF16 = "utf16",
-    UTF32 = "utf32",
+    UTF8 = "utf-8",
+    UTF16 = "utf-16",
+    UTF32 = "utf-32",
     RAW = "raw"
 }
 
 export interface EncodingMatch {
     matches: Match[];
-    encoding: string;
+    encoding: Encoding;
 }
 
 

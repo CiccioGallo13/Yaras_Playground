@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Button, ButtonGroup, ButtonToolbar, Card, CardBody, CardFooter, CardHeader, CardTitle, Col, Container, FormGroup, FormText, Input, Label, Row, Styles, Table } from 'sveltestrap';
+    import { Button, ButtonGroup, ButtonToolbar, Card, CardBody, CardFooter, CardHeader, CardTitle, Col, Container, FormGroup, FormText, Input, Label, Row, Styles, Spinner, Table } from 'sveltestrap';
     import type { Color } from 'sveltestrap/src/shared';
     import { _sendData, _encodeString } from './+page';
     import type { JsonRequest, JsonResponse, HighlightedMatches } from '../model/model';
@@ -12,41 +12,52 @@
     let rulesTextArea: string;
     let completeScan: boolean = false;
     let renderTable: boolean = false;
+    let loadingResponse: boolean = false;
+    let loadingFile: boolean = false;
+
     function fileScan(who: string): any{
         var result: string  = '';
-        if(files){
-            
-            for(const file of files){
-                
-                let reader= new FileReader();
-                reader.readAsText(file);
-                
-                reader.onload = function(){
-                    //console.log(reader.result); 
-                    result = reader.result?.slice(0) as string;
-                    if(who === "data"){
-                        console.log(result);
-                        dataTextArea= result;
-                    }else{
-                        if(who === "rules")
-                        {
-                            rulesTextArea = result;
+        loadingFile = true;
+        setTimeout(() => {
+            if(files){ 
+                for(const file of files){
+                    
+                    let reader= new FileReader();
+                    reader.readAsText(file);
+                    
+                    reader.onload = function(){
+                        //console.log(reader.result); 
+                        result = reader.result?.slice(0) as string;
+                        if(who === "data"){
+                            console.log(result);
+                            dataTextArea= result;
+                        }else{
+                            if(who === "rules")
+                            {
+                                rulesTextArea = result;
+                            }
                         }
-                    }
-                };
+                    };
+
+                    reader.onerror = function() {
+                        console.log(reader.error);
+                    };
+                }
                 
-                reader.onerror = function() {
-                    console.log(reader.error);
-                };
             }
-            
-        }
+            loadingFile = false;
+        },150);
+
+
     }
+
     let matches: JsonResponse
     let higlightedText: Map<string, HighlightedMatches[]>
 
     
     async function scanData() {
+        loadingResponse = true;
+        renderTable = false;
         let jsonRequest: JsonRequest = {
             rules: rulesTextArea,
             data: dataTextArea,
@@ -60,7 +71,8 @@
             higlightedText = preProcessMatch(matches);
             console.log(response);
             renderTable = true;
-        
+            loadingResponse = false;
+    
         }
         , (error) => {
         console.log(error);
@@ -112,6 +124,11 @@
 
 <Styles />
 
+{#if loadingFile}
+    <div class="overlay">
+        <Spinner type="grow" style="backgroundColor: #bc66f2;" />
+    </div>
+{/if}
 
 <Card class="mx-auto" style="border-radius: 0; background-color: var(--color-verylight)">
     <CardBody>
@@ -147,7 +164,7 @@
                     <div class="options">
                         <FormGroup>
                             <Label for="dataFile">or upload your file to scan here</Label>
-                            <Input bind:files type="file" name="file" id="dataFile" on:input={() => fileScan("data")}
+                            <Input bind:files type="file" name="file" id="dataFile" on:change={() => fileScan("data")}
                                 style="background-color: var(--color-text-area);"/>
                             <FormText color="muted" />
                         </FormGroup>
@@ -176,10 +193,16 @@
     </Row>
 </CardFooter>
 </Card>
+{#if loadingResponse}
+<div class="spinner-load">
+    <Spinner type="grow" style="background-color: #bc66f2;" />
+</div>
+{/if}
 {#if renderTable}
 <Container>
 <div class="options">
-<Table>
+<Table disabled={loadingResponse}>
+
     <thead>
         <tr>
             <th>Encoding</th>
@@ -215,6 +238,7 @@
 <style>
     .options {
         padding-top: 0.6cm;
+        z-index: 1;
     }
     .centered {
         display: flex;
@@ -241,5 +265,25 @@
         color: var(--color-strongest);
     }
 
+    .spinner-load {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100px;
+        z-index: 2;
+    }
+
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
 
 </style>

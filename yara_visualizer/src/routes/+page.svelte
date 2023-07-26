@@ -23,7 +23,10 @@
                 for(const file of files){
                     
                     let reader= new FileReader();
-                    reader.readAsText(file);
+                    if (file.type != "text/plain")
+                        reader.readAsBinaryString(file)
+                    else
+                        reader.readAsText(file);
                     
                     reader.onload = function(){
                         //console.log(reader.result); 

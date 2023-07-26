@@ -1,29 +1,30 @@
 {
-	"name": "yara-visualizer",
-	"version": "0.0.1",
-	"private": true,
-	"scripts": {
-		"dev": "vite dev",
-		"build": "vite build",
-		"preview": "vite preview",
-		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
-	},
-	"devDependencies": {
-		"@sveltejs/adapter-auto": "^2.0.1",
-		"@sveltejs/kit": "^1.5.0",
-		"@types/node": "^18.15.12",
-		"svelte": "^3.58.0",
-		"svelte-check": "^3.0.1",
-		"tslib": "^2.4.1",
-		"typescript": "^5.0.0",
-		"vite": "^4.2.0"
-	},
-	"type": "module",
-	"dependencies": {
-		"bootstrap": "^5.2.3",
-		"fs": "^0.0.1-security",
-		"sveltestrap": "^5.10.0",
-		"types": "^0.1.1"
-	}
+  "name": "yara-visualizer",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.36.2",
+    "@sveltejs/adapter-auto": "^2.0.1",
+    "@sveltejs/kit": "^1.5.0",
+    "@types/node": "^18.15.12",
+    "svelte": "^3.58.0",
+    "svelte-check": "^3.0.1",
+    "tslib": "^2.4.1",
+    "typescript": "^5.0.0",
+    "vite": "^4.2.0"
+  },
+  "type": "module",
+  "dependencies": {
+    "bootstrap": "^5.2.3",
+    "fs": "^0.0.1-security",
+    "sveltestrap": "^5.10.0",
+    "types": "^0.1.1"
+  }
 }

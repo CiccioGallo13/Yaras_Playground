@@ -11,7 +11,7 @@
 
 
 <Navbar style="background-color: hsl(0deg, 0%, 30%);" expand="md">
-    <p>YARA VISUALIZER</p>
+    <p id="title">YARA VISUALIZER</p>
     <NavItem style="color: var(--color-lightest)">
         <ButtonGroup>
             <Button active={$theme == 'light'} on:click={() => {theme.set('light')}}

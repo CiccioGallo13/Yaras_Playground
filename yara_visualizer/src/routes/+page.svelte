@@ -23,8 +23,14 @@
                 for(const file of files){
                     
                     let reader= new FileReader();
-                    if (file.type != "text/plain")
-                        reader.readAsBinaryString(file)
+            
+                    if (file.type != "text/plain"){
+                        if(who === "data" || (who === "rules" && (file.name.endsWith(".yar")) || file.name.endsWith(".yara"))){
+                            reader.readAsBinaryString(file)
+                        }else{
+                            alert("File extension not supported");
+                        }
+                    }
                     else
                         reader.readAsText(file);
                     
@@ -49,7 +55,7 @@
                 
             }
             loadingFile = false;
-        },150);
+        },300);
 
 
     }

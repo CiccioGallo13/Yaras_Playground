@@ -133,8 +133,8 @@
 <Card class="mx-auto" style="border-radius: 0; background-color: var(--color-verylight)">
     <CardBody>
         <Row cols={2}>
-            <Container style="background-color: var(--color-verylight)">
-                <Col sm={{ size: 'auto', offset: 1 }}>
+            <Container style="background-color: var(--color-verylight); min-width:300pt; padding-right:40pt; padding-left:40pt;">
+                <Col sm={{ size: 'auto', offset: 0 }}>
                     <FormGroup>
                         <Label for="rulesTextArea">Rules</Label>
                         <Input type="textarea" name="text" id="rulesTextArea" bind:value={rulesTextArea} 
@@ -154,12 +154,12 @@
             </Container>
         
 
-            <Container>
-                <Col sm={{ size: 'auto', offset: 1}}>
+            <Container style="padding-right: 40pt; padding-left: 40pt; min-width:300pt;">
+                <Col sm={{ size: 'auto', offset: 0}}>
                     <FormGroup>
                         <Label for="dataTextArea">Data</Label>
                         <Input type="textarea" name="text" id="dataTextArea" bind:value={dataTextArea} 
-                        style="background-color: var(--color-text-area); min-height:100pt; max-height:400pt"/>
+                        style="background-color: var(--color-text-area); min-height:100pt; max-height:400pt;"/>
                     </FormGroup>
                     <div class="options">
                         <FormGroup>

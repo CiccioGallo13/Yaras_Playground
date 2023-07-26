@@ -20,3 +20,25 @@ test('rulesTextAreaInput', async ({ page }) => {
 
   await expect(page.getByLabel('Data')).toHaveValue('rules');
 });
+
+/*
+test('theme', async ({ page }) => {
+
+await page.goto('http://localhost:1313/');
+await page.getByRole('button', { name: 'Dark' }).click();
+await expect(page.getByRole('button', { name: 'Scan' })).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+
+await page.getByRole('button', { name: 'Light' }).click();
+await expect(page.getByRole('button', { name: 'Scan' })).toHaveCSS('background-color', 'rgb(0, 0, 0)');
+
+});
+*/
+
+test('rulesTextAreaUpload', async ({ page }) => {
+  await page.goto('http://localhost:1313/');
+  page.getByLabel('or upload your file to scan here').click();
+  page.on('filechooser', async (fileChooser) => {
+    await fileChooser.setFiles('./tests/test-files/dataInputText.txt');
+  });
+  await expect(page.getByLabel('Data')).toHaveValue('data input test');
+});

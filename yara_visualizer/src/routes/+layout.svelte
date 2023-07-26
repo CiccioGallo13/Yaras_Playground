@@ -27,7 +27,6 @@
 <slot />
 
 <style>
-
     p {
         font-size: 23px;
         font-weight: bold;

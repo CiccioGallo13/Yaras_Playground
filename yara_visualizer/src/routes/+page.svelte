@@ -121,12 +121,13 @@
                     <FormGroup>
                         <Label for="rulesTextArea">Rules</Label>
                         <Input type="textarea" name="text" id="rulesTextArea" bind:value={rulesTextArea} 
-                        style="min-height:100pt; max-height:400pt"/>
+                        style="background-color: var(--color-text-area); min-height:100pt; max-height:400pt"/>
                     </FormGroup>
                     <div class="options">
                         <FormGroup>
                             <Label for="rulesFile">or upload your rules here</Label>
-                            <Input bind:files type="file" name="file" id="rulesFile" on:change={() => fileScan("rules")}/>
+                            <Input bind:files type="file" name="file" id="rulesFile" on:change={() => fileScan("rules")}
+                                style="background-color: var(--color-text-area);"/>
                             <FormText color="muted" />
                         </FormGroup>
 
@@ -140,12 +141,14 @@
                 <Col sm={{ size: 'auto', offset: 1}}>
                     <FormGroup>
                         <Label for="dataTextArea">Data</Label>
-                        <Input type="textarea" name="text" id="dataTextArea" bind:value={dataTextArea} style="min-height:100pt; max-height:400pt"/>
+                        <Input type="textarea" name="text" id="dataTextArea" bind:value={dataTextArea} 
+                        style="background-color: var(--color-text-area); min-height:100pt; max-height:400pt"/>
                     </FormGroup>
                     <div class="options">
                         <FormGroup>
                             <Label for="dataFile">or upload your file to scan here</Label>
-                            <Input bind:files type="file" name="file" id="dataFile" on:input={() => fileScan("data")} />
+                            <Input bind:files type="file" name="file" id="dataFile" on:input={() => fileScan("data")}
+                                style="background-color: var(--color-text-area);"/>
                             <FormText color="muted" />
                         </FormGroup>
                     </div>
@@ -228,6 +231,14 @@
     body {
     background-color: var(--color-verylight);
     color: var(--color-strongest);
+    }
+
+    th {
+        color: var(--color-strongest);
+    }
+
+    td {
+        color: var(--color-strongest);
     }
 
 

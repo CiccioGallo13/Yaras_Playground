@@ -7,18 +7,18 @@ test('title', async ({ page }) => {
 
 test('dataTextAreaInput', async ({ page }) => {
   await page.goto('http://localhost:1313/');
-  await page.getByLabel('Data').click();
-  await page.getByLabel('Data').fill('data');
+  await page.getByAltText('dataTextArea').click();
+  await page.getByAltText('dataTextArea').fill('data');
 
-  await expect(page.getByLabel('Data')).toHaveValue('data');
+  await expect(page.getByAltText('dataTextArea')).toHaveValue('data');
 });
 
 test('rulesTextAreaInput', async ({ page }) => {
   await page.goto('http://localhost:1313/');
-  await page.getByLabel('Data').click();
-  await page.getByLabel('Data').fill('rules');
+  await page.getByAltText('rulesTextArea').click();
+  await page.getByAltText('rulesTextArea').fill('rules');
 
-  await expect(page.getByLabel('Data')).toHaveValue('rules');
+  await expect(page.getByAltText('rulesTextArea')).toHaveValue('rules');
 });
 
 /*
@@ -34,11 +34,42 @@ await expect(page.getByRole('button', { name: 'Scan' })).toHaveCSS('background-c
 });
 */
 
+
 test('rulesTextAreaUpload', async ({ page }) => {
   await page.goto('http://localhost:1313/');
-  page.getByLabel('or upload your file to scan here').click();
-  page.on('filechooser', async (fileChooser) => {
-    await fileChooser.setFiles('./tests/test-files/dataInputText.txt');
-  });
-  await expect(page.getByLabel('Data')).toHaveValue('data input test');
+  const [fileChooser] = await Promise.all([
+    page.waitForEvent('filechooser'), 
+    page.getByAltText("rulesInput").click()
+  ]);
+  await fileChooser.setFiles('./tests/test-files/dataInputText.yara');
+  await page.waitForTimeout(1000);
+
+  await expect(page.getByAltText('rulesTextArea')).toHaveValue('data input test');
+});
+
+
+
+test('dataTextAreaUpload', async ({ page }) => {
+  await page.goto('http://localhost:1313/');
+  const [fileChooser] = await Promise.all([
+    page.waitForEvent('filechooser'), 
+    page.getByAltText("dataInput").click()
+  ]);
+  await fileChooser.setFiles('./tests/test-files/dataInputText.txt');
+  await page.waitForTimeout(1000);
+
+  await expect(page.getByAltText('dataTextArea')).toHaveValue('data input test');
+});
+
+test('test rule', async ({ page }) => {
+  await page.goto('http://localhost:1313/');
+  await page.getByAltText('rulesTextArea').click();
+  await page.getByAltText('rulesTextArea').fill("rule test {strings: $a = \"test\" condition: $a}");
+
+  await page.getByAltText('dataTextArea').click();
+  await page.getByAltText('dataTextArea').fill("test");
+
+  await page.getByRole('button', { name: 'Scan' }).click();
+  
+  await expect(page.getByRole('row', { name: 'raw test test' })).toBeVisible();
 });

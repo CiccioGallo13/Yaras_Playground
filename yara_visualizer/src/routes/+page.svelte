@@ -48,6 +48,7 @@
                         }
                     };
 
+
                     reader.onerror = function() {
                         console.log(reader.error);
                     };
@@ -85,6 +86,8 @@
         }
         , (error) => {
         console.log(error);
+        loadingResponse = false;
+        alert("Server unreachable");
         });
 
     }
@@ -146,13 +149,13 @@
                 <Col sm={{ size: 'auto', offset: 0 }}>
                     <FormGroup>
                         <Label for="rulesTextArea">Rules</Label>
-                        <Input type="textarea" name="text" id="rulesTextArea" bind:value={rulesTextArea} 
+                        <Input type="textarea" name="text" id="rulesTextArea" alt="rulesTextArea" bind:value={rulesTextArea} 
                         style="background-color: var(--color-text-area); min-height:100pt; max-height:400pt"/>
                     </FormGroup>
                     <div class="options">
                         <FormGroup>
                             <Label for="rulesFile">or upload your rules here</Label>
-                            <Input bind:files type="file" name="file" id="rulesFile" on:change={() => fileScan("rules")}
+                            <Input bind:files type="file" name="file" id="rulesFile" alt="rulesInput" accept=".txt,.yar,.yara" on:change={() => fileScan("rules")}
                                 style="background-color: var(--color-text-area);"/>
                             <FormText color="muted" />
                         </FormGroup>
@@ -167,13 +170,13 @@
                 <Col sm={{ size: 'auto', offset: 0}}>
                     <FormGroup>
                         <Label for="dataTextArea">Data</Label>
-                        <Input type="textarea" name="text" id="dataTextArea" bind:value={dataTextArea} 
+                        <Input type="textarea" name="text" id="dataTextArea" alt="dataTextArea" bind:value={dataTextArea} 
                         style="background-color: var(--color-text-area); min-height:100pt; max-height:400pt;"/>
                     </FormGroup>
                     <div class="options">
                         <FormGroup>
                             <Label for="dataFile">or upload your file to scan here</Label>
-                            <Input bind:files type="file" name="file" id="dataFile" on:change={() => fileScan("data")}
+                            <Input bind:files type="file" name="file" id="dataFile" alt="dataInput" on:change={() => fileScan("data")}
                                 style="background-color: var(--color-text-area);"/>
                             <FormText color="muted" />
                         </FormGroup>

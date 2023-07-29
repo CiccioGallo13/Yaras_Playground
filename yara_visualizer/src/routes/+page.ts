@@ -39,7 +39,7 @@ export function _highlightInstances(text: string, instances: StringMatchInstance
     return highlightedParts.join('');
   }
 
-  function stringToUTF32(input: string): string {
+function stringToUTF32(input: string): string {
     let utf32Array = [];
     for (let i = 0; i < input.length; i++) {
         const charCode = input.charCodeAt(i);

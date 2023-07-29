@@ -15,6 +15,7 @@
     let loadingResponse: boolean = false;
     let loadingFile: boolean = false;
 
+
     function fileScan(who: string): any{
         var result: string  = '';
         loadingFile = true;
@@ -58,7 +59,6 @@
             loadingFile = false;
         },300);
 
-
     }
 
     let matches: JsonResponse
@@ -92,7 +92,7 @@
 
     }
 
-    
+    //this function is used to pre-process the matches in order to highlight the matched data
     function preProcessMatch(matches: JsonResponse): Map<string, HighlightedMatches[] > {
         let highlightedTextMap: Map<string, HighlightedMatches[]> = new Map<string, HighlightedMatches[] >();
 
@@ -285,17 +285,17 @@
         z-index: 2;
     }
 
-.overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-}
+    .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
 
 </style>

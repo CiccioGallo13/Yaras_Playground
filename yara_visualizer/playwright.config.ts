@@ -8,7 +8,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 /**
  * See https://playwright.dev/docs/test-configuration.
- */
+*/
 export default defineConfig({
   testDir: './tests',
   /* Run tests in files in parallel */
@@ -67,6 +67,13 @@ export default defineConfig({
     //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
     // },
   ],
+    
+  webServer: {
+      // command: 'npm run build && npm run preview',
+      command: 'npm run dev',
+      port: 1313,
+      reuseExistingServer: true,
+  },
 
   /* Run your local dev server before starting the tests */
   // webServer: {

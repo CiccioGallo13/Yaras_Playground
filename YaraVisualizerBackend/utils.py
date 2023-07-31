@@ -2,7 +2,7 @@ import codecs
 
 
 def string_to_hex(string: str):
-    return ''.join(hex(ord(c))[2:] for c in string)
+    return str(''.join(hex(ord(c))[2:].zfill(2) for c in string))
 
 
 def hex_to_string(_hex: str):

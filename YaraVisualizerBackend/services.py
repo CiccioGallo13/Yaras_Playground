@@ -1,22 +1,17 @@
 import yara
 import os
-from models import RequestModel, CustomMatch, CustomStringMatch, CustomStringMatchInstance, EncodingMatch, \
+from models import RequestModel, CustomMatch, CustomStringMatch, CustomStringMatchInstance, \
     ResponseModel, Encodings
 import utils
 
 
 def analyze_data(obj: RequestModel):
-    encoding_matches: list[EncodingMatch] = []
-    for encoding in Encodings:
-        encoding_matches.append(EncodingMatch(matches=match(obj.rules, encode_data(obj, encoding), obj.complete_scan),
-                                              encoding=encoding))
-    return ResponseModel(encoding_matches=encoding_matches)
+    return ResponseModel(matches=match(obj.rules, obj.data, obj.complete_scan))
 
 
 # configure the yara-rules module and check the data
 def match(rules: str, data: str, complete_scan: bool):
     response: list[CustomMatch] = []
-
     # scan using rules in the directory 'ReversingLabs-Yara-Rules'
     if complete_scan:
         rule = yara.compile(filepaths=scan_files())

@@ -1,8 +1,8 @@
 <script lang="ts">
     import { Button, ButtonGroup, ButtonToolbar, Card, CardBody, CardFooter, CardHeader, CardTitle, Col, Container, FormGroup, FormText, Input, Label, Row, Styles, Spinner, Table } from 'sveltestrap';
     import type { Color } from 'sveltestrap/src/shared';
-    import { _sendData, _encodeString } from './+page';
-    import type { JsonRequest, JsonResponse, HighlightedMatches } from '../model/model';
+    import { _sendData, _encodeString, _highlightInstances } from './+page';
+    import { type JsonRequest, type JsonResponse, type HighlightedMatches, Encoding, type MatchingOccurrence } from '../model/model';
     import { _highlightWordByOffset } from './+page';
 
 
@@ -14,6 +14,8 @@
     let renderTable: boolean = false;
     let loadingResponse: boolean = false;
     let loadingFile: boolean = false;
+
+    let encodings: Encoding[] = [Encoding.HEX, Encoding.ASCII, Encoding.UTF8, Encoding.UTF16, Encoding.UTF32, Encoding.BINARY];
 
 
     function fileScan(who: string): any{
@@ -62,7 +64,7 @@
     }
 
     let matches: JsonResponse
-    let higlightedText: Map<string, HighlightedMatches[]>
+    let highlightedText: Map<string, HighlightedMatches>
 
     
     async function scanData() {
@@ -78,7 +80,7 @@
         
         _sendData(jsonRequest).then((response) => {
             matches = response
-            higlightedText = preProcessMatch(matches);
+            highlightedText = preProcessMatch(matches);
             console.log(response);
             renderTable = true;
             loadingResponse = false;
@@ -93,39 +95,33 @@
     }
 
     //this function is used to pre-process the matches in order to highlight the matched data
-    function preProcessMatch(matches: JsonResponse): Map<string, HighlightedMatches[] > {
-        let highlightedTextMap: Map<string, HighlightedMatches[]> = new Map<string, HighlightedMatches[] >();
-
-        matches.encoding_matches.forEach((element) => {
-            let highlightedMatches: HighlightedMatches[] = [];
-            element.matches.forEach((match) => {
-                
-                let highlighted: string = _encodeString(dataTextArea, element.encoding);
-                let offsetDiff = 0;
+    function preProcessMatch(matches: JsonResponse): Map<string, HighlightedMatches > {
+        let matchOccurences: MatchingOccurrence[] = [];
+        let rules: string[] = [];
+        let meta: string[] = [];
+        
+        let highlightedTextMap: Map<string, HighlightedMatches> = new Map<string, HighlightedMatches >();
+        matches.matches.forEach((match) => {
+            rules.push(match.rule);
+            meta.push(match.meta);
             match.string_match.forEach((stringMatch) => {
                 stringMatch.instances.forEach((instance) => {
-                const highlightedInstance = _highlightWordByOffset(
-                    highlighted,
-                    instance.offset + offsetDiff,
-                    instance.matched_length
-                );
-                highlighted = highlightedInstance;
-                offsetDiff += 13;
-                });
-                highlightedMatches.push({
-                rule: match.rule,
-                meta: match.meta,
-                highlighted_string: highlighted,
+                    matchOccurences.push({
+                        offset: instance.offset,
+                        length: instance.matched_length
+                    });
                 });
             });
-            });
-            if( highlightedMatches.length != 0 ){
-                highlightedTextMap.set(element.encoding, highlightedMatches);
+        });
+        for(let encoding in encodings) {
+
+            if( rules.length != 0 ){
+                highlightedTextMap.set(encodings[encoding], {rules: rules , meta: meta, highlighted_string: _highlightInstances(dataTextArea, matchOccurences, encodings[encoding])});
             }else
             {
-                highlightedTextMap.set(element.encoding, new Array<HighlightedMatches>( {rule: undefined, meta: undefined, highlighted_string: "No matched data"} )  );
+                highlightedTextMap.set(encodings[encoding], {rules: undefined , meta: undefined, highlighted_string: "No matched data" });
             }
-        });
+        };
 
         return highlightedTextMap;
     }
@@ -223,19 +219,21 @@
         </tr>
     </thead>
     <tbody>
-        {#each matches.encoding_matches as _match}
+        {#each encodings as encoding}
         <tr>
-            <td>{_match.encoding}</td>
+            <td>{encoding}</td>
             <td>
-                <div class="scrollable-content">
-                {#each higlightedText.get(_match.encoding) || [] as highlightedMatch}
-                    <p>{@html highlightedMatch.highlighted_string}</p>
-                {/each}
+                <div>
+                    {#if encoding === 'hex' || encoding === 'binary' || encoding === 'ascii'}
+                        <pre class="scrollable-content-spaces">{@html highlightedText.get(encoding)?.highlighted_string}</pre>
+                    {:else}
+                        <pre class="scrollable-content-nospaces">{@html highlightedText.get(encoding)?.highlighted_string}</pre>
+                    {/if}
                 </div>
             </td>
             <td>
-                {#each _match.matches as dataMatch}
-                    <p>{dataMatch.rule}</p>
+                {#each highlightedText.get(encoding)?.rules || [] as rule}
+                    <p>{rule}</p>
                 {/each}
             </td>
         </tr>
@@ -257,11 +255,19 @@
         justify-content: center;
         align-items: center;
     }
-    .scrollable-content {
-        max-width: 900px;
-        word-wrap: break-word;
-        max-height: 200px;
+    .scrollable-content-spaces {
         overflow-y: auto;
+        width: 780px;
+        white-space: pre-wrap;
+        max-height: 200px;
+    }
+
+    .scrollable-content-nospaces {
+        overflow-y: auto;
+        width: 780px;
+        line-break: anywhere;
+        white-space: pre-wrap;
+        max-height: 200px;
     }
 
     body {

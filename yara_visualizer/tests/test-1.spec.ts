@@ -38,7 +38,7 @@ await expect(page.getByRole('button', { name: 'Scan' })).toHaveCSS('background-c
 test('rulesTextAreaUpload', async ({ page }) => {
   await page.goto('http://localhost:1313/');
   const [fileChooser] = await Promise.all([
-    page.waitForEvent('filechooser'), 
+    page.waitForEvent('filechooser'),
     page.getByAltText("rulesInput").click()
   ]);
   await fileChooser.setFiles('./tests/test-files/dataInputText.yara');

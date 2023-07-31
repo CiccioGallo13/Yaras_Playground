@@ -42,11 +42,16 @@ export interface EncodingMatch {
 
 
 export interface JsonResponse {
-    encoding_matches: EncodingMatch[];
+    matches: Match[];
 }
 
 export interface HighlightedMatches {
-    rule?: string;
-    meta?: string;
+    rules?: string[];
+    meta?: string[];
     highlighted_string: string;
+}
+
+export interface MatchingOccurrence {
+    offset: number;
+    length: number;
 }

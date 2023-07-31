@@ -1,4 +1,4 @@
-import type{ JsonRequest, JsonResponse, StringMatchInstance } from '../model/model';
+import type{ JsonRequest, JsonResponse, MatchingOccurrence, StringMatchInstance } from '../model/model';
 import { Encoding } from '../model/model';
 
 export async function _sendData(jsonRequest: JsonRequest) {
@@ -15,29 +15,33 @@ export async function _sendData(jsonRequest: JsonRequest) {
     
 }
 
-export function _highlightWordByOffset(text: string, offset: number, length: number): string {
-    const start = offset;
-    const end = offset + length;
-    return `${text.slice(0, start)}<mark>${text.slice(start, end)}</mark>${text.slice(end)}`;
-  }
+export function _highlightWordByOffset(text: string, offset: number, end: number, encoding: string): string {
 
-export function _highlightInstances(text: string, instances: StringMatchInstance[]): string {
+    return `<mark>${_encodeString(text.slice(offset, end), encoding)}</mark>`;
+}
+
+
+export function _highlightInstances(text: string, instances: MatchingOccurrence[], encoding: string): string {
+
+    let occurrences: MatchingOccurrence[] = mergeIntersectingOccurrences(instances);
+
     const highlightedParts: string[] = [];
     let lastIndex = 0;
   
-    instances.forEach((instance) => {
+    occurrences.forEach((instance) => {
       const start = instance.offset;
-      const end = start + instance.matched_length;
-      const highlightedInstance = _highlightWordByOffset(text, start, instance.matched_length);
+      const end = start + instance.length;
+      const highlightedInstance = _highlightWordByOffset(text, start, end, encoding);
   
-      highlightedParts.push(text.slice(lastIndex, start));
+      highlightedParts.push(_encodeString(text.slice(lastIndex, start), encoding));
       highlightedParts.push(highlightedInstance);
       lastIndex = end;
     });
   
-    highlightedParts.push(text.slice(lastIndex));
+    highlightedParts.push(_encodeString(text.slice(lastIndex), encoding));
     return highlightedParts.join('');
   }
+
 
 function stringToUTF32(input: string): string {
     let utf32Array = [];
@@ -52,16 +56,23 @@ function stringToUTF32(input: string): string {
 }
 
 
-export function _encodeString(input: string, encoding: Encoding): string {
-  switch (encoding) {
+export function _encodeString(input: string, encoding: string): string {
+    switch (encoding) {
       case Encoding.HEX:
-          if (typeof Buffer !== "undefined") {
-              return Buffer.from(input).toString("hex");
-          } else {
-              return Array.from(input)
-                  .map((char) => char.charCodeAt(0).toString(16).padStart(2, "0"))
-                  .join("");
-          }
+          {
+            const hexString = Array.from(input)
+                .map((char) => char.charCodeAt(0).toString(16).padStart(2, "0"))
+                .join("");
+
+            let formattedHexString = "";
+            for (let i = 0; i < hexString.length; i += 2) {
+                formattedHexString += hexString.substr(i, 2) + " ";
+                if ((i + 2) % 16 === 0 && i !== hexString.length - 2) {
+                    formattedHexString += " ";
+                }
+            }
+            return formattedHexString;
+        }
       case Encoding.BINARY:
           return Array.from(input)
               .map((char) => char.charCodeAt(0).toString(2).padStart(8, "0"))
@@ -85,3 +96,36 @@ export function _encodeString(input: string, encoding: Encoding): string {
           throw new Error("Unsupported encoding");
   }
 }
+
+
+function mergeIntersectingOccurrences(occurrences: MatchingOccurrence[]): MatchingOccurrence[] {
+    if (occurrences.length <= 1) {
+      return occurrences;
+    }
+  
+    const sortedOccurrences = [...occurrences].sort((a, b) => (a.offset || 0) - (b.offset || 0));
+  
+    const mergedOccurrences: MatchingOccurrence[] = [sortedOccurrences[0]];
+  
+    // Iterate through the sortedOccurrences and merge overlapping occurrences
+    for (let i = 1; i < sortedOccurrences.length; i++) {
+      const currentOccurrence = sortedOccurrences[i];
+      const lastMergedOccurrence = mergedOccurrences[mergedOccurrences.length - 1];
+  
+      if (currentOccurrence.offset! <= lastMergedOccurrence.offset! + lastMergedOccurrence.length!) {
+
+        const mergedOffset = Math.min(lastMergedOccurrence.offset!, currentOccurrence.offset!);
+        const mergedLength = Math.max(
+          lastMergedOccurrence.offset! + lastMergedOccurrence.length!,
+          currentOccurrence.offset! + currentOccurrence.length!
+        ) - mergedOffset;
+  
+        lastMergedOccurrence.offset = mergedOffset;
+        lastMergedOccurrence.length = mergedLength;
+      } else {
+        mergedOccurrences.push(currentOccurrence);
+      }
+    }
+  
+    return mergedOccurrences;
+  }

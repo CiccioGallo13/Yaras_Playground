@@ -48,4 +48,4 @@ class EncodingMatch(BaseModel):
 
 
 class ResponseModel(BaseModel):
-    encoding_matches: list[EncodingMatch]
+    matches: list[CustomMatch]

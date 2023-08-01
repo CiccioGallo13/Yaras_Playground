@@ -54,3 +54,8 @@ export interface MatchingOccurrence {
     offset: number;
     length: number;
 }
+
+export interface State {
+    rules: string;
+    data: string;
+}

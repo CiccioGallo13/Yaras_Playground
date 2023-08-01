@@ -2,9 +2,10 @@
     import { Button, ButtonGroup, ButtonToolbar, Card, CardBody, CardFooter, CardHeader, CardTitle, Col, Container, FormGroup, FormText, Input, Label, Row, Styles, Spinner, Table } from 'sveltestrap';
     import type { Color } from 'sveltestrap/src/shared';
     import { _sendData, _encodeString, _highlightInstances, _highlightWordByOffset, _getFormattedData } from './+page';
-    import { type JsonRequest, type JsonResponse, type HighlightedMatches, Encoding, type MatchingOccurrence } from '../model/model';
+    import { type JsonRequest, type JsonResponse, type HighlightedMatches, Encoding, type MatchingOccurrence, type State } from '../model/model';
     import { page } from '$app/stores';
     import { rulesTextArea, dataTextArea } from '$lib/stores';
+    import { Utils } from 'dumbo-svelte/utils'
 
     const color: Color = 'dark';
     let files: FileList;
@@ -22,22 +23,19 @@
     }
 
     function updateUrlHash(data:string, rules:string) {
-        const hashString = `rules=${encodeURIComponent(rules)}&data=${encodeURIComponent(data)}`;
+        const hashString = Utils.compress({rules: rules, data: data});
         if (typeof window !== 'undefined') {
-            window.location.hash = hashString;
+            window.location.hash = '#state='+hashString;
         }
     }
 
     let encodings: Encoding[] = [Encoding.HEX, Encoding.ASCII, Encoding.UTF8, Encoding.UTF16, Encoding.UTF32, Encoding.BINARY];
 
-    const matchUrl = $page.url.hash.match(/#rules=(.*)&data=(.*)/);
+    const matchUrl = $page.url.hash.match(/#state=(.*)/);
     if (matchUrl) {
-        if (matchUrl[1]) {
-            $rulesTextArea = decodeURIComponent(matchUrl[1]);
-        }
-        if (matchUrl[2]) {
-            $dataTextArea = decodeURIComponent(matchUrl[2]);
-        }
+        const state: State = Utils.uncompress(matchUrl[1]);
+        $rulesTextArea = state.rules;
+        $dataTextArea = state.data;
     }
 
     function fileScan(who: string): any{

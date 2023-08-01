@@ -8,11 +8,69 @@
     import { Utils } from 'dumbo-svelte/utils'
 
     const color: Color = 'dark';
-    let files: FileList;
+    let dataFiles: FileList;
+    let rulesFiles: FileList;
     let completeScan: boolean = false;
     let renderTable: boolean = false;
     let loadingResponse: boolean = false;
     let loadingFile: boolean = false;
+
+    $: if(dataFiles){
+        let result: string  = '';
+        loadingFile = true;
+        for(const file of dataFiles){
+            
+            let reader= new FileReader();
+    
+            if (file.type != "text/plain")
+                reader.readAsBinaryString(file)
+            else
+                reader.readAsText(file);
+            
+            reader.onload = function(){
+                setTimeout(() => {
+                    result = reader.result?.slice(0) as string;
+                    $dataTextArea= result;
+                    loadingFile = false;
+                },0);
+            };
+
+            reader.onerror = function() {
+                console.log(reader.error);
+            };
+        }
+                
+    }
+
+    $: if(rulesFiles) {
+        let result: string  = '';
+        loadingFile = true;
+        for(const file of rulesFiles){
+            
+            let reader= new FileReader();
+    
+            if (file.type != "text/plain"){
+                if((file.name.endsWith(".yar")) || file.name.endsWith(".yara"))
+                    reader.readAsBinaryString(file)
+                else
+                    alert("File extension not supported");
+            }
+            else
+                reader.readAsText(file);
+            
+            reader.onload = function(){
+                setTimeout(() => {
+                    result = reader.result?.slice(0) as string;
+                    $rulesTextArea= result;
+                    loadingFile = false;
+                },0);
+            };
+
+            reader.onerror = function() {
+                console.log(reader.error);
+            };
+        }
+    }
 
     $: {
         const data = $dataTextArea;
@@ -38,50 +96,6 @@
         $dataTextArea = state.data;
     }
 
-    function fileScan(who: string): any{
-        var result: string  = '';
-        loadingFile = true;
-        setTimeout(() => {
-            if(files){ 
-                for(const file of files){
-                    
-                    let reader= new FileReader();
-            
-                    if (file.type != "text/plain"){
-                        if(who === "data" || (who === "rules" && (file.name.endsWith(".yar")) || file.name.endsWith(".yara"))){
-                            reader.readAsBinaryString(file)
-                        }else{
-                            alert("File extension not supported");
-                        }
-                    }
-                    else
-                        reader.readAsText(file);
-                    
-                    reader.onload = function(){
-                        //console.log(reader.result); 
-                        result = reader.result?.slice(0) as string;
-                        if(who === "data"){
-                            console.log(result);
-                            $dataTextArea= result;
-                        }else{
-                            if(who === "rules")
-                            {
-                                $rulesTextArea = result;
-                            }
-                        }
-                    };
-
-
-                    reader.onerror = function() {
-                        console.log(reader.error);
-                    };
-                }
-                
-            }
-            loadingFile = false;
-        },300);
-
-    }
 
     let matches: JsonResponse
     let highlightedText: Map<string, HighlightedMatches>
@@ -168,7 +182,7 @@
                     <div class="options">
                         <FormGroup>
                             <Label for="rulesFile">or upload your rules here</Label>
-                            <Input bind:files type="file" name="file" id="rulesFile" alt="rulesInput" accept=".txt,.yar,.yara" on:change={() => fileScan("rules")}
+                            <Input bind:files={rulesFiles} type="file" name="file" id="rulesFile" alt="rulesInput" accept=".txt,.yar,.yara"
                                 style="background-color: var(--color-text-area);"/>
                             <FormText color="muted" />
                         </FormGroup>
@@ -189,7 +203,7 @@
                     <div class="options">
                         <FormGroup>
                             <Label for="dataFile">or upload your file to scan here</Label>
-                            <Input bind:files type="file" name="file" id="dataFile" alt="dataInput" on:change={() => fileScan("data")}
+                            <Input bind:files={dataFiles} type="file" name="file" id="dataFile" alt="dataInput" 
                                 style="background-color: var(--color-text-area);"/>
                             <FormText color="muted" />
                         </FormGroup>

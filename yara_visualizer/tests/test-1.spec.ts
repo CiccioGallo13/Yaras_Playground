@@ -1,12 +1,15 @@
 import { test, expect } from '@playwright/test';
+import { beforeEach } from 'node:test';
+
+test.beforeEach(async ({page})=> {
+  await page.goto('http://localhost:1313/');
+})
 
 test('title', async ({ page }) => {
-  await page.goto('http://localhost:1313/');
   await expect(page.getByText('YARA VISUALIZER')).toBeVisible();
 });
 
 test('dataTextAreaInput', async ({ page }) => {
-  await page.goto('http://localhost:1313/');
   await page.getByAltText('dataTextArea').click();
   await page.getByAltText('dataTextArea').fill('data');
 
@@ -14,7 +17,6 @@ test('dataTextAreaInput', async ({ page }) => {
 });
 
 test('rulesTextAreaInput', async ({ page }) => {
-  await page.goto('http://localhost:1313/');
   await page.getByAltText('rulesTextArea').click();
   await page.getByAltText('rulesTextArea').fill('rules');
 
@@ -23,8 +25,6 @@ test('rulesTextAreaInput', async ({ page }) => {
 
 /*
 test('theme', async ({ page }) => {
-
-await page.goto('http://localhost:1313/');
 await page.getByRole('button', { name: 'Dark' }).click();
 await expect(page.getByRole('button', { name: 'Scan' })).toHaveCSS('background-color', 'rgb(255, 255, 255)');
 
@@ -36,7 +36,6 @@ await expect(page.getByRole('button', { name: 'Scan' })).toHaveCSS('background-c
 
 
 test('rulesTextAreaUpload', async ({ page }) => {
-  await page.goto('http://localhost:1313/');
   const [fileChooser] = await Promise.all([
     page.waitForEvent('filechooser'),
     page.getByAltText("rulesInput").click()
@@ -50,7 +49,6 @@ test('rulesTextAreaUpload', async ({ page }) => {
 
 
 test('dataTextAreaUpload', async ({ page }) => {
-  await page.goto('http://localhost:1313/');
   const [fileChooser] = await Promise.all([
     page.waitForEvent('filechooser'), 
     page.getByAltText("dataInput").click()
@@ -62,7 +60,6 @@ test('dataTextAreaUpload', async ({ page }) => {
 });
 
 test('test rule', async ({ page }) => {
-  await page.goto('http://localhost:1313/');
   await page.getByAltText('rulesTextArea').click();
   await page.getByAltText('rulesTextArea').fill("rule test {strings: $a = \"test\" condition: $a}");
 

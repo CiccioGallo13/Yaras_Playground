@@ -20,9 +20,10 @@ export function _highlightWordByOffset(text: string, offset: number, end: number
     return `<mark>${_encodeString(text.slice(offset, end), encoding)}</mark>`;
 }
 
+let index = 0;
 
 export function _highlightInstances(text: string, instances: MatchingOccurrence[], encoding: string): string {
-
+    index = 0;
     let occurrences: MatchingOccurrence[] = mergeIntersectingOccurrences(instances);
 
     const highlightedParts: string[] = [];
@@ -31,9 +32,9 @@ export function _highlightInstances(text: string, instances: MatchingOccurrence[
     occurrences.forEach((instance) => {
       const start = instance.offset;
       const end = start + instance.length;
-      const highlightedInstance = _highlightWordByOffset(text, start, end, encoding);
-  
+      
       highlightedParts.push(_encodeString(text.slice(lastIndex, start), encoding));
+      const highlightedInstance = _highlightWordByOffset(text, start, end, encoding);
       highlightedParts.push(highlightedInstance);
       lastIndex = end;
     });
@@ -65,12 +66,14 @@ export function _encodeString(input: string, encoding: string): string {
                 .join("");
 
             let formattedHexString = "";
-            for (let i = 0; i < hexString.length; i += 2) {
+            let i = 0;
+            for (i ; i < hexString.length; i += 2) {
                 formattedHexString += hexString.substr(i, 2) + " ";
-                if ((i + 2) % 16 === 0 && i !== hexString.length - 2) {
+                if ((i+index + 2) % 16 === 0) {
                     formattedHexString += " ";
                 }
             }
+            index += i;
             return formattedHexString;
         }
       case Encoding.BINARY:
@@ -129,3 +132,8 @@ function mergeIntersectingOccurrences(occurrences: MatchingOccurrence[]): Matchi
   
     return mergedOccurrences;
   }
+
+export function _getFormattedData(jsonData: string) {
+  console.log(jsonData);
+  return Object.entries(jsonData).map(([key, value]) => `  ${key}:    ${value}`).join("\n");
+}

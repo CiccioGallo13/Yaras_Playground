@@ -27,6 +27,7 @@ import "pe"
 rule scratch {
     meta:
         author      = "JFK"
+        vendor      = "Usa"
 
     strings:
         $a = "dallas"

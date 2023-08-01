@@ -1,22 +1,44 @@
 <script lang="ts">
     import { Button, ButtonGroup, ButtonToolbar, Card, CardBody, CardFooter, CardHeader, CardTitle, Col, Container, FormGroup, FormText, Input, Label, Row, Styles, Spinner, Table } from 'sveltestrap';
     import type { Color } from 'sveltestrap/src/shared';
-    import { _sendData, _encodeString, _highlightInstances } from './+page';
+    import { _sendData, _encodeString, _highlightInstances, _highlightWordByOffset, _getFormattedData } from './+page';
     import { type JsonRequest, type JsonResponse, type HighlightedMatches, Encoding, type MatchingOccurrence } from '../model/model';
-    import { _highlightWordByOffset } from './+page';
-
+    import { page } from '$app/stores';
+    import { rulesTextArea, dataTextArea } from '$lib/stores';
 
     const color: Color = 'dark';
     let files: FileList;
-    let dataTextArea: string;
-    let rulesTextArea: string;
     let completeScan: boolean = false;
     let renderTable: boolean = false;
     let loadingResponse: boolean = false;
     let loadingFile: boolean = false;
 
+    $: {
+        const data = $dataTextArea;
+        const rules = $rulesTextArea;
+        if (typeof window !== 'undefined') {
+            updateUrlHash(data, rules);
+        }
+    }
+
+    function updateUrlHash(data:string, rules:string) {
+        const hashString = `rules=${encodeURIComponent(rules)}&data=${encodeURIComponent(data)}`;
+        if (typeof window !== 'undefined') {
+            window.location.hash = hashString;
+        }
+    }
+
     let encodings: Encoding[] = [Encoding.HEX, Encoding.ASCII, Encoding.UTF8, Encoding.UTF16, Encoding.UTF32, Encoding.BINARY];
 
+    const matchUrl = $page.url.hash.match(/#rules=(.*)&data=(.*)/);
+    if (matchUrl) {
+        if (matchUrl[1]) {
+            $rulesTextArea = decodeURIComponent(matchUrl[1]);
+        }
+        if (matchUrl[2]) {
+            $dataTextArea = decodeURIComponent(matchUrl[2]);
+        }
+    }
 
     function fileScan(who: string): any{
         var result: string  = '';
@@ -42,11 +64,11 @@
                         result = reader.result?.slice(0) as string;
                         if(who === "data"){
                             console.log(result);
-                            dataTextArea= result;
+                            $dataTextArea= result;
                         }else{
                             if(who === "rules")
                             {
-                                rulesTextArea = result;
+                                $rulesTextArea = result;
                             }
                         }
                     };
@@ -71,8 +93,8 @@
         loadingResponse = true;
         renderTable = false;
         let jsonRequest: JsonRequest = {
-            rules: rulesTextArea,
-            data: dataTextArea,
+            rules: $rulesTextArea,
+            data: $dataTextArea,
             complete_scan: completeScan
         };
 
@@ -98,12 +120,10 @@
     function preProcessMatch(matches: JsonResponse): Map<string, HighlightedMatches > {
         let matchOccurences: MatchingOccurrence[] = [];
         let rules: string[] = [];
-        let meta: string[] = [];
         
         let highlightedTextMap: Map<string, HighlightedMatches> = new Map<string, HighlightedMatches >();
         matches.matches.forEach((match) => {
             rules.push(match.rule);
-            meta.push(match.meta);
             match.string_match.forEach((stringMatch) => {
                 stringMatch.instances.forEach((instance) => {
                     matchOccurences.push({
@@ -116,16 +136,15 @@
         for(let encoding in encodings) {
 
             if( rules.length != 0 ){
-                highlightedTextMap.set(encodings[encoding], {rules: rules , meta: meta, highlighted_string: _highlightInstances(dataTextArea, matchOccurences, encodings[encoding])});
+                highlightedTextMap.set(encodings[encoding], {rules: rules, highlighted_string: _highlightInstances($dataTextArea, matchOccurences, encodings[encoding])});
             }else
             {
-                highlightedTextMap.set(encodings[encoding], {rules: undefined , meta: undefined, highlighted_string: "No matched data" });
+                highlightedTextMap.set(encodings[encoding], {rules: undefined , highlighted_string: "No matched data" });
             }
         };
 
         return highlightedTextMap;
     }
-
 </script>
 
 <body>
@@ -145,7 +164,7 @@
                 <Col sm={{ size: 'auto', offset: 0 }}>
                     <FormGroup>
                         <Label for="rulesTextArea">Rules</Label>
-                        <Input type="textarea" name="text" id="rulesTextArea" alt="rulesTextArea" bind:value={rulesTextArea} 
+                        <Input type="textarea" name="text" id="rulesTextArea" alt="rulesTextArea" bind:value={$rulesTextArea} 
                         style="background-color: var(--color-text-area); min-height:100pt; max-height:400pt"/>
                     </FormGroup>
                     <div class="options">
@@ -166,7 +185,7 @@
                 <Col sm={{ size: 'auto', offset: 0}}>
                     <FormGroup>
                         <Label for="dataTextArea">Data</Label>
-                        <Input type="textarea" name="text" id="dataTextArea" alt="dataTextArea" bind:value={dataTextArea} 
+                        <Input type="textarea" name="text" id="dataTextArea" alt="dataTextArea" bind:value={$dataTextArea} 
                         style="background-color: var(--color-text-area); min-height:100pt; max-height:400pt;"/>
                     </FormGroup>
                     <div class="options">
@@ -209,37 +228,80 @@
 {#if renderTable}
 <Container>
 <div class="options">
-<Table disabled={loadingResponse}>
-
-    <thead>
-        <tr>
-            <th>Encoding</th>
-            <th>Data</th>
-            <th>Matched rules</th>
-        </tr>
-    </thead>
-    <tbody>
-        {#each encodings as encoding}
-        <tr>
-            <td>{encoding}</td>
-            <td>
-                <div>
-                    {#if encoding === 'hex' || encoding === 'binary' || encoding === 'ascii'}
-                        <pre class="scrollable-content-spaces">{@html highlightedText.get(encoding)?.highlighted_string}</pre>
-                    {:else}
-                        <pre class="scrollable-content-nospaces">{@html highlightedText.get(encoding)?.highlighted_string}</pre>
-                    {/if}
-                </div>
-            </td>
-            <td>
-                {#each highlightedText.get(encoding)?.rules || [] as rule}
-                    <p>{rule}</p>
-                {/each}
-            </td>
-        </tr>
-        {/each}
-    </tbody>
-</Table>
+    <Table disabled={loadingResponse}>
+        <thead>
+            <tr>
+                <th>Encoding</th>
+                <th>Data</th>
+            </tr>
+        </thead>
+        <tbody>
+            {#each encodings as encoding}
+            <tr>
+                <td>{encoding}</td>
+                <td>
+                    <div>
+                        {#if encoding === 'hex' || encoding === 'binary' || encoding === 'ascii'}
+                            <pre class="scrollable-content-spaces">{@html highlightedText.get(encoding)?.highlighted_string}</pre>
+                        {:else}
+                            <pre class="scrollable-content-nospaces">{@html highlightedText.get(encoding)?.highlighted_string}</pre>
+                        {/if}
+                    </div>
+                </td>
+            </tr>
+            {/each}
+        </tbody>
+    </Table>
+    
+    <Table disabled={loadingResponse}>
+        <thead>
+            <tr>
+                <th>Matched rules</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="overflow: auto; max-width: 20vw; max-height: 40vh;">
+                    {#each matches.matches || [] as rule}
+                        <p>{rule.rule}</p>
+                    {/each}
+                </td>
+            </tr>
+        </tbody>
+    </Table>
+</div>
+<h3>Match Details</h3>
+<div class="options">
+    <Table disabled={loadingResponse}>
+        <thead>
+            <tr>
+                <th>Rules</th>
+                <th>Matches</th>
+            </tr>
+        </thead>
+        <tbody>
+            {#each matches.matches || [] as rule}
+            <tr>
+                    <td>
+                        <pre style="max-width: 20vw; overflow: auto;  white-space:pre-wrap; max-height: 200px;">
+{rule.rule}
+{_getFormattedData(JSON.parse(rule.meta.replace(/'/g, '\"')))}
+                        </pre>
+                    </td>
+                
+                    <td>
+                        <div class="scrollable-content-spaces">
+                        {#each rule.string_match || [] as stringMatch}
+                            {#each stringMatch.instances || [] as instance}
+                                <p> Offset: {instance.offset} -- Length: {instance.matched_length} -- Matched data: "{instance.matched_data}"</p>
+                            {/each}
+                        {/each}
+                        </div>
+                    </td>
+            </tr>
+            {/each}
+        </tbody>
+    </Table>
 </div>
 </Container>
 {/if}
@@ -249,6 +311,7 @@
     .options {
         padding-top: 0.6cm;
         z-index: 1;
+        display: flex;
     }
     .centered {
         display: flex;

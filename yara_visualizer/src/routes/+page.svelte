@@ -7,6 +7,13 @@
     import { rulesTextArea, dataTextArea } from '$lib/stores';
     import { Utils } from 'dumbo-svelte/utils'
     import { get } from 'svelte/store';
+    import { onMount } from 'svelte';
+
+
+
+    onMount(async () => {
+        document.getElementsByTagName("body")[0].setAttribute("data-load", "complete");
+    });
 
     const color: Color = 'dark';
     let dataFiles: FileList;
@@ -182,13 +189,13 @@
                 <Col sm={{ size: 'auto', offset: 0 }}>
                     <FormGroup>
                         <Label for="rulesTextArea">Rules</Label>
-                        <Input type="textarea" name="text" id="rulesTextArea" alt="rulesTextArea" bind:value={$rulesTextArea} 
+                        <Input type="textarea" name="text" id="rulesTextArea" bind:value={$rulesTextArea} 
                         style="background-color: var(--color-text-area); min-height:100pt; max-height:400pt"/>
                     </FormGroup>
                     <div class="options">
                         <FormGroup>
                             <Label for="rulesFile">or upload your rules here</Label>
-                            <Input bind:files={rulesFiles} type="file" name="file" id="rulesFile" alt="rulesInput" accept=".txt,.yar,.yara"
+                            <Input bind:files={rulesFiles} type="file" name="file" id="rulesFile" accept=".txt,.yar,.yara"
                                 style="background-color: var(--color-text-area);"/>
                             <FormText color="muted" />
                         </FormGroup>
@@ -203,7 +210,7 @@
                 <Col sm={{ size: 'auto', offset: 0}}>
                     <FormGroup>
                         <Label for="dataTextArea">Data</Label>
-                        <Input type="textarea" name="text" id="dataTextArea" alt="dataTextArea" bind:value={$dataTextArea} 
+                        <Input type="textarea" name="text" id="dataTextArea" bind:value={$dataTextArea} 
                         style="background-color: var(--color-text-area); min-height:100pt; max-height:400pt;"/>
                     </FormGroup>
                     <div class="options">

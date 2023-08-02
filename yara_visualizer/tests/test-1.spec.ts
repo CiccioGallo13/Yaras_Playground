@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
 
+
 test.beforeEach(async ({page})=> {
   await page.goto('http://localhost:1313/');
+  await page.waitForSelector("body[data-load='complete']");
 })
 
 test('title', async ({ page }) => {
@@ -9,17 +11,18 @@ test('title', async ({ page }) => {
 });
 
 test('dataTextAreaInput', async ({ page }) => {
-  await page.getByAltText('dataTextArea').click();
-  await page.getByAltText('dataTextArea').fill('data');
+  await page.locator('#dataTextArea').click();
 
-  await expect(page.getByAltText('dataTextArea')).toHaveValue('data');
+  await page.locator('#dataTextArea').fill('data');
+
+  await expect(page.locator('#dataTextArea')).toHaveValue('data');
 });
 
 test('rulesTextAreaInput', async ({ page }) => {
-  await page.getByAltText('rulesTextArea').click();
-  await page.getByAltText('rulesTextArea').fill('rules');
+  await page.locator('#rulesTextArea').click();
+  await page.locator('#rulesTextArea').fill('rules');
 
-  await expect(page.getByAltText('rulesTextArea')).toHaveValue('rules');
+  await expect(page.locator('#rulesTextArea')).toHaveValue('rules');
 });
 
 /*
@@ -33,42 +36,28 @@ await expect(page.getByRole('button', { name: 'Scan' })).toHaveCSS('background-c
 });
 */
 
-/*
-test('rulesTextAreaUpload', async ({ page }) => {
-  const [fileChooser] = await Promise.all([
-    page.waitForEvent('filechooser'),
-    page.getByAltText("rulesInput").click()
-  ]);
-  await fileChooser.setFiles('./tests/test-files/dataInputText.yara');
-  await page.waitForTimeout(1000);
-
-  await expect(page.getByAltText('rulesTextArea')).toHaveValue('data input test');
-});
-*/
 test('rulesTextAreaUpload', async ({ page }) => {
   const fileChooserPromise = page.waitForEvent('filechooser');
   
-  await page.getByAltText("rulesInput").click()
+  await page.locator('#rulesFile').click()
 
   const fileChooser = await fileChooserPromise;
 
   await fileChooser.setFiles('./tests/test-files/dataInputText.yara');
-  await page.waitForTimeout(1000);
 
-  await expect(page.getByAltText('rulesTextArea')).toHaveValue('data input test');
+  await expect(page.locator('#rulesTextArea')).toHaveValue('data input test');
 });
 
 test('dataTextAreaUpload', async ({ page }) => {
   const fileChooserPromise = page.waitForEvent('filechooser');
 
-  await page.getByAltText("dataInput").click()
+  await page.locator('#dataFile').click()
   
   const fileChooser = await fileChooserPromise;
 
   await fileChooser.setFiles('./tests/test-files/dataInputText.txt');
-  await page.waitForTimeout(1000);
 
-  await expect(page.getByAltText('dataTextArea')).toHaveValue('data input test');
+  await expect(page.locator('#dataTextArea')).toHaveValue('data input test');
 });
 
 test('test rule', async ({ page }) => {
@@ -102,13 +91,11 @@ test('test rule', async ({ page }) => {
     });
   });
 
-  await page.getByLabel('Rules', { exact: true }).fill("rule test {strings: $a = \"test\" condition: $a}");
-  await page.getByLabel('Data', { exact: true}).fill("test");
-  await page.waitForTimeout(1000);
+  await page.locator('#rulesTextArea').fill("rule test {strings: $a = \"test\" condition: $a}");
+  await page.locator('#dataTextArea').fill("test");
   
   await page.getByRole('button', { name: 'Scan' }).click();
   
-  await page.waitForTimeout(2000);
 
   await expect(page.getByRole('row', { name: "test", exact: true})).toBeVisible();
 });

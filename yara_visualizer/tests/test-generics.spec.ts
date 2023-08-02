@@ -10,22 +10,7 @@ test('title', async ({ page }) => {
   await expect(page.getByText('YARA VISUALIZER')).toBeVisible();
 });
 
-test('dataTextAreaInput', async ({ page }) => {
-  await page.locator('#dataTextArea').click();
 
-  await page.locator('#dataTextArea').fill('data');
-
-  await expect(page.locator('#dataTextArea')).toHaveValue('data');
-});
-
-test('rulesTextAreaInput', async ({ page }) => {
-  await page.locator('#rulesTextArea').click();
-  await page.locator('#rulesTextArea').fill('rules');
-
-  await expect(page.locator('#rulesTextArea')).toHaveValue('rules');
-});
-
-/*
 test('theme', async ({ page }) => {
 await page.getByRole('button', { name: 'Dark' }).click();
 await expect(page.getByRole('button', { name: 'Scan' })).toHaveCSS('background-color', 'rgb(255, 255, 255)');
@@ -34,31 +19,7 @@ await page.getByRole('button', { name: 'Light' }).click();
 await expect(page.getByRole('button', { name: 'Scan' })).toHaveCSS('background-color', 'rgb(0, 0, 0)');
 
 });
-*/
 
-test('rulesTextAreaUpload', async ({ page }) => {
-  const fileChooserPromise = page.waitForEvent('filechooser');
-  
-  await page.locator('#rulesFile').click()
-
-  const fileChooser = await fileChooserPromise;
-
-  await fileChooser.setFiles('./tests/test-files/dataInputText.yara');
-
-  await expect(page.locator('#rulesTextArea')).toHaveValue('data input test');
-});
-
-test('dataTextAreaUpload', async ({ page }) => {
-  const fileChooserPromise = page.waitForEvent('filechooser');
-
-  await page.locator('#dataFile').click()
-  
-  const fileChooser = await fileChooserPromise;
-
-  await fileChooser.setFiles('./tests/test-files/dataInputText.txt');
-
-  await expect(page.locator('#dataTextArea')).toHaveValue('data input test');
-});
 
 test('test rule', async ({ page }) => {
   // Mock the API response

@@ -1,6 +1,4 @@
 import { test, expect } from '@playwright/test';
-import { dataTextArea, rulesTextArea } from './../src/lib/stores';
-import { get } from 'svelte/store';
 
 test.beforeEach(async ({page})=> {
   await page.goto('http://localhost:1313/');
@@ -105,9 +103,7 @@ test('test rule', async ({ page }) => {
   });
 
   await page.getByLabel('Rules', { exact: true }).fill("rule test {strings: $a = \"test\" condition: $a}");
-  rulesTextArea.set("rule test {strings: $a = \"test\" condition: $a}");
   await page.getByLabel('Data', { exact: true}).fill("test");
-  dataTextArea.set("test");
   await page.waitForTimeout(1000);
   
   await page.getByRole('button', { name: 'Scan' }).click();

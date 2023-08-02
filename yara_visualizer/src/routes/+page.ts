@@ -1,5 +1,5 @@
 import type{ JsonRequest, JsonResponse, MatchingOccurrence, StringMatchInstance } from '../model/model';
-import { Encoding } from '../model/model';
+import { _encodeString, _resetIndex } from '$lib/utils';
 
 export async function _sendData(jsonRequest: JsonRequest) {
     
@@ -20,10 +20,9 @@ export function _highlightWordByOffset(text: string, offset: number, end: number
     return `<mark>${_encodeString(text.slice(offset, end), encoding)}</mark>`;
 }
 
-let index = 0;
 
 export function _highlightInstances(text: string, instances: MatchingOccurrence[], encoding: string): string {
-    index = 0;
+    _resetIndex();
     let occurrences: MatchingOccurrence[] = mergeIntersectingOccurrences(instances);
 
     const highlightedParts: string[] = [];
@@ -42,63 +41,6 @@ export function _highlightInstances(text: string, instances: MatchingOccurrence[
     highlightedParts.push(_encodeString(text.slice(lastIndex), encoding));
     return highlightedParts.join('');
   }
-
-
-function stringToUTF32(input: string): string {
-    let utf32Array = [];
-    for (let i = 0; i < input.length; i++) {
-        const charCode = input.charCodeAt(i);
-        utf32Array.push(String.fromCharCode((charCode >> 24) & 0xFF));
-        utf32Array.push(String.fromCharCode((charCode >> 16) & 0xFF));
-        utf32Array.push(String.fromCharCode((charCode >> 8) & 0xFF));
-        utf32Array.push(String.fromCharCode(charCode & 0xFF));
-    }
-    return utf32Array.join("");
-}
-
-
-export function _encodeString(input: string, encoding: string): string {
-    switch (encoding) {
-      case Encoding.HEX:
-          {
-            const hexString = Array.from(input)
-                .map((char) => char.charCodeAt(0).toString(16).padStart(2, "0"))
-                .join("");
-
-            let formattedHexString = "";
-            let i = 0;
-            for (i ; i < hexString.length; i += 2) {
-                formattedHexString += hexString.substr(i, 2) + " ";
-                if ((i+index + 2) % 16 === 0) {
-                    formattedHexString += " ";
-                }
-            }
-            index += i;
-            return formattedHexString;
-        }
-      case Encoding.BINARY:
-          return Array.from(input)
-              .map((char) => char.charCodeAt(0).toString(2).padStart(8, "0"))
-              .join(" ");
-      case Encoding.ASCII:
-          return Array.from(input)
-              .map((char) => char.charCodeAt(0).toString(10))
-              .join(" ");
-      case Encoding.UTF8:
-          return input;
-      case Encoding.UTF16:
-          return Array.from(input)
-              .map((char) => char.charCodeAt(0))
-              .map((code) => String.fromCharCode(code & 0xFF, (code >> 8) & 0xFF))
-              .join("");
-      case Encoding.UTF32:
-          return stringToUTF32(input);
-      case Encoding.RAW:
-          return input;
-      default:
-          throw new Error("Unsupported encoding");
-  }
-}
 
 
 function mergeIntersectingOccurrences(occurrences: MatchingOccurrence[]): MatchingOccurrence[] {

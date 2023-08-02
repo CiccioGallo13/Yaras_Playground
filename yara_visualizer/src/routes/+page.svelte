@@ -1,11 +1,12 @@
 <script lang="ts">
     import { Button, ButtonGroup, ButtonToolbar, Card, CardBody, CardFooter, CardHeader, CardTitle, Col, Container, FormGroup, FormText, Input, Label, Row, Styles, Spinner, Table } from 'sveltestrap';
     import type { Color } from 'sveltestrap/src/shared';
-    import { _sendData, _encodeString, _highlightInstances, _highlightWordByOffset, _getFormattedData } from './+page';
+    import { _sendData, _highlightInstances, _highlightWordByOffset, _getFormattedData } from './+page';
     import { type JsonRequest, type JsonResponse, type HighlightedMatches, Encoding, type MatchingOccurrence, type State } from '../model/model';
     import { page } from '$app/stores';
     import { rulesTextArea, dataTextArea } from '$lib/stores';
     import { Utils } from 'dumbo-svelte/utils'
+    import { get } from 'svelte/store';
 
     const color: Color = 'dark';
     let dataFiles: FileList;
@@ -30,9 +31,9 @@
             reader.onload = function(){
                 setTimeout(() => {
                     result = reader.result?.slice(0) as string;
-                    $dataTextArea= result;
+                    dataTextArea.set(result);
                     loadingFile = false;
-                },0);
+                },10);
             };
 
             reader.onerror = function() {
@@ -61,9 +62,9 @@
             reader.onload = function(){
                 setTimeout(() => {
                     result = reader.result?.slice(0) as string;
-                    $rulesTextArea= result;
+                    rulesTextArea.set(result);
                     loadingFile = false;
-                },0);
+                },10);
             };
 
             reader.onerror = function() {
@@ -73,12 +74,13 @@
     }
 
     $: {
-        const data = $dataTextArea;
-        const rules = $rulesTextArea;
+        const data = get(dataTextArea);
+        const rules = get(rulesTextArea);
         if (typeof window !== 'undefined') {
             updateUrlHash(data, rules);
         }
     }
+
 
     function updateUrlHash(data:string, rules:string) {
         const hashString = Utils.compress({rules: rules, data: data});
@@ -86,27 +88,28 @@
             window.location.hash = '#state='+hashString;
         }
     }
-
-    let encodings: Encoding[] = [Encoding.HEX, Encoding.ASCII, Encoding.UTF8, Encoding.UTF16, Encoding.UTF32, Encoding.BINARY];
-
     const matchUrl = $page.url.hash.match(/#state=(.*)/);
     if (matchUrl) {
         const state: State = Utils.uncompress(matchUrl[1]);
-        $rulesTextArea = state.rules;
-        $dataTextArea = state.data;
+        rulesTextArea.set(state.rules);
+        dataTextArea.set(state.data);
     }
+
+
+    let encodings: Encoding[] = [Encoding.HEX, Encoding.ASCII, Encoding.PLAIN, Encoding.UTF8, Encoding.UTF16, Encoding.UTF32, Encoding.BINARY];
+
 
 
     let matches: JsonResponse
     let highlightedText: Map<string, HighlightedMatches>
 
     
-    async function scanData() {
+    function scanData() {
         loadingResponse = true;
         renderTable = false;
         let jsonRequest: JsonRequest = {
-            rules: $rulesTextArea,
-            data: $dataTextArea,
+            rules: get(rulesTextArea),
+            data: get(dataTextArea),
             complete_scan: completeScan
         };
 
@@ -116,14 +119,17 @@
             matches = response
             highlightedText = preProcessMatch(matches);
             console.log(response);
-            renderTable = true;
-            loadingResponse = false;
-    
+            setTimeout(() => {
+                loadingResponse = false;
+                renderTable = true;
+            }, 0);
         }
         , (error) => {
         console.log(error);
-        loadingResponse = false;
-        alert("Server unreachable");
+        setTimeout(() => {
+            loadingResponse = false;
+            alert("Server unreachable");
+        }, 0);
         });
 
     }
@@ -148,7 +154,7 @@
         for(let encoding in encodings) {
 
             if( rules.length != 0 ){
-                highlightedTextMap.set(encodings[encoding], {rules: rules, highlighted_string: _highlightInstances($dataTextArea, matchOccurences, encodings[encoding])});
+                highlightedTextMap.set(encodings[encoding], {rules: rules, highlighted_string: _highlightInstances(get(dataTextArea), matchOccurences, encodings[encoding])});
             }else
             {
                 highlightedTextMap.set(encodings[encoding], {rules: undefined , highlighted_string: "No matched data" });
@@ -239,7 +245,7 @@
 {/if}
 {#if renderTable}
 <Container>
-<div class="options">
+<div id= "table-results" class="options">
     <Table disabled={loadingResponse}>
         <thead>
             <tr>

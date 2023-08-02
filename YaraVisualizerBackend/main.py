@@ -9,6 +9,8 @@ import services
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
+import utils
+
 app = FastAPI()
 origins = [
     "http://localhost.tiangolo.com",

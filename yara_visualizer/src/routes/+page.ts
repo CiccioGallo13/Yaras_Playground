@@ -1,84 +1,39 @@
-import type{ JsonRequest, JsonResponse, MatchingOccurrence, StringMatchInstance } from '../model/model';
-import { _encodeString, _resetIndex, _decodeFromUTF8Bytes, _utf8StringToBytesHex } from '$lib/utils';
+import type { JsonResponse, HighlightedMatches, MatchingOccurrence } from "../model/model";
+import { Encoding } from "../model/model";
+import { dataTextArea } from "$lib/stores";
+import { _highlightInstances } from "$lib/utils";
+import { get } from "svelte/store";
 
-export async function _sendData(jsonRequest: JsonRequest) {
-    
-    const response = await fetch('http://localhost:8000/set/json/', {
-        method: 'POST',
-        body: JSON.stringify(jsonRequest),
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    });
+
+export const _encodings: Encoding[] = [Encoding.HEX, Encoding.ASCII, Encoding.PLAIN, Encoding.UTF8, Encoding.UTF16, Encoding.UTF32, Encoding.BINARY, Encoding.RAW];
+
+
+//this function is used to pre-process the matches in order to highlight the matched data
+export function _preProcessMatch(matches: JsonResponse): Map<string, HighlightedMatches > {
+  let matchOccurences: MatchingOccurrence[] = [];
+  let rules: string[] = [];
   
-    return await response.json() as JsonResponse;
-    
-}
+  let highlightedTextMap: Map<string, HighlightedMatches> = new Map<string, HighlightedMatches >();
+  matches.matches.forEach((match) => {
+      rules.push(match.rule);
+      match.string_match.forEach((stringMatch) => {
+          stringMatch.instances.forEach((instance) => {
+              matchOccurences.push({
+                  offset: instance.offset,
+                  length: instance.matched_length
+              });
+          });
+      });
+  });
+  for(let encoding in _encodings) {
 
-export function _highlightWordByOffset(text: string, offset: number, end: number, encoding: string): string {
-
-    return `<mark>${_decodeFromUTF8Bytes(text.slice(offset, end), encoding)}</mark>`;
-}
-
-
-export function _highlightInstances(text: string, instances: MatchingOccurrence[], encoding: string): string {
-    _resetIndex();
-    let occurrences: MatchingOccurrence[] = mergeIntersectingOccurrences(instances);
-
-    let hexText = _utf8StringToBytesHex(text);
-
-    _resetIndex();
-    const highlightedParts: string[] = [];
-    let lastIndex = 0;
-  
-    occurrences.forEach((instance) => {
-      const start = instance.offset*2;
-      const end = start + instance.length*2;
-      
-      highlightedParts.push(_decodeFromUTF8Bytes(hexText.slice(lastIndex, start), encoding));
-      const highlightedInstance = _highlightWordByOffset(hexText, start, end, encoding);
-      highlightedParts.push(highlightedInstance);
-      lastIndex = end;
-    });
-  
-    highlightedParts.push(_decodeFromUTF8Bytes(hexText.slice(lastIndex), encoding));
-
-    return highlightedParts.join('');
-  }
-
-
-function mergeIntersectingOccurrences(occurrences: MatchingOccurrence[]): MatchingOccurrence[] {
-    if (occurrences.length <= 1) {
-      return occurrences;
-    }
-  
-    const sortedOccurrences = [...occurrences].sort((a, b) => (a.offset || 0) - (b.offset || 0));
-  
-    const mergedOccurrences: MatchingOccurrence[] = [sortedOccurrences[0]];
-  
-    // Iterate through the sortedOccurrences and merge overlapping occurrences
-    for (let i = 1; i < sortedOccurrences.length; i++) {
-      const currentOccurrence = sortedOccurrences[i];
-      const lastMergedOccurrence = mergedOccurrences[mergedOccurrences.length - 1];
-  
-      if (currentOccurrence.offset! <= lastMergedOccurrence.offset! + lastMergedOccurrence.length!) {
-
-        const mergedOffset = Math.min(lastMergedOccurrence.offset!, currentOccurrence.offset!);
-        const mergedLength = Math.max(
-          lastMergedOccurrence.offset! + lastMergedOccurrence.length!,
-          currentOccurrence.offset! + currentOccurrence.length!
-        ) - mergedOffset;
-  
-        lastMergedOccurrence.offset = mergedOffset;
-        lastMergedOccurrence.length = mergedLength;
-      } else {
-        mergedOccurrences.push(currentOccurrence);
+      if( rules.length != 0 ){
+          highlightedTextMap.set(_encodings[encoding], {rules: rules, highlighted_string: _highlightInstances(get(dataTextArea), matchOccurences, _encodings[encoding])});
+      }else
+      {
+          highlightedTextMap.set(_encodings[encoding], {rules: undefined , highlighted_string: "No matched data" });
       }
-    }
-  
-    return mergedOccurrences;
-  }
+  };
 
-export function _getFormattedData(jsonData: string) {
-  return Object.entries(jsonData).map(([key, value]) => `  ${key}:    ${value}`).join("\n");
+  return highlightedTextMap;
 }

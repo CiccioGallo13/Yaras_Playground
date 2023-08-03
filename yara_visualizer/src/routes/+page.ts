@@ -1,5 +1,5 @@
 import type{ JsonRequest, JsonResponse, MatchingOccurrence, StringMatchInstance } from '../model/model';
-import { _encodeString, _resetIndex } from '$lib/utils';
+import { _encodeString, _resetIndex, _decodeFromUTF8Bytes, _utf8StringToBytesHex } from '$lib/utils';
 
 export async function _sendData(jsonRequest: JsonRequest) {
     
@@ -17,7 +17,7 @@ export async function _sendData(jsonRequest: JsonRequest) {
 
 export function _highlightWordByOffset(text: string, offset: number, end: number, encoding: string): string {
 
-    return `<mark>${_encodeString(text.slice(offset, end), encoding)}</mark>`;
+    return `<mark>${_decodeFromUTF8Bytes(text.slice(offset, end), encoding)}</mark>`;
 }
 
 
@@ -25,20 +25,24 @@ export function _highlightInstances(text: string, instances: MatchingOccurrence[
     _resetIndex();
     let occurrences: MatchingOccurrence[] = mergeIntersectingOccurrences(instances);
 
+    let hexText = _utf8StringToBytesHex(text);
+
+    _resetIndex();
     const highlightedParts: string[] = [];
     let lastIndex = 0;
   
     occurrences.forEach((instance) => {
-      const start = instance.offset;
-      const end = start + instance.length;
+      const start = instance.offset*2;
+      const end = start + instance.length*2;
       
-      highlightedParts.push(_encodeString(text.slice(lastIndex, start), encoding));
-      const highlightedInstance = _highlightWordByOffset(text, start, end, encoding);
+      highlightedParts.push(_decodeFromUTF8Bytes(hexText.slice(lastIndex, start), encoding));
+      const highlightedInstance = _highlightWordByOffset(hexText, start, end, encoding);
       highlightedParts.push(highlightedInstance);
       lastIndex = end;
     });
   
-    highlightedParts.push(_encodeString(text.slice(lastIndex), encoding));
+    highlightedParts.push(_decodeFromUTF8Bytes(hexText.slice(lastIndex), encoding));
+
     return highlightedParts.join('');
   }
 
@@ -76,6 +80,5 @@ function mergeIntersectingOccurrences(occurrences: MatchingOccurrence[]): Matchi
   }
 
 export function _getFormattedData(jsonData: string) {
-  console.log(jsonData);
   return Object.entries(jsonData).map(([key, value]) => `  ${key}:    ${value}`).join("\n");
 }

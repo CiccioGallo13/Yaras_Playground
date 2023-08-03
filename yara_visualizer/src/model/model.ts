@@ -26,14 +26,14 @@ export interface Match {
 }
 
 export enum Encoding {
-    HEX = "hex",
-    BINARY = "binary",
-    ASCII = "ascii",
-    PLAIN = "plain",
-    UTF8 = "utf-8",
-    UTF16 = "utf-16",
-    UTF32 = "utf-32",
-    RAW = "raw"
+    HEX =       "hex",
+    BINARY =    "binary",
+    ASCII =     "ascii",
+    PLAIN =     "plain",
+    UTF8 =      "utf-8",
+    UTF16 =     "utf-16",
+    UTF32 =     "utf-32",
+    RAW =       "raw"
 }
 
 export interface EncodingMatch {

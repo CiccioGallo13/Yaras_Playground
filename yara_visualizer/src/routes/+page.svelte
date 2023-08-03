@@ -103,7 +103,7 @@
     }
 
 
-    let encodings: Encoding[] = [Encoding.HEX, Encoding.ASCII, Encoding.PLAIN, Encoding.UTF8, Encoding.UTF16, Encoding.UTF32, Encoding.BINARY];
+    let encodings: Encoding[] = [Encoding.HEX, Encoding.ASCII, Encoding.PLAIN, Encoding.UTF8, Encoding.UTF16, Encoding.UTF32, Encoding.BINARY, Encoding.RAW];
 
 
 

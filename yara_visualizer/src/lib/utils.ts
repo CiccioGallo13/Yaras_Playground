@@ -70,7 +70,8 @@ function stringToUTF32(input: string): string {
         case Encoding.ASCII:
           return Array.from(input)
               .map((char) => char.charCodeAt(0).toString(10))
-              .join(" ");
+              .join(" ")+' ';
+
         case Encoding.UTF8:
           return stringToUTF8(input);
 
@@ -103,6 +104,111 @@ function stringToUTF32(input: string): string {
   }
 }
 
+export function _decodeFromUTF8Bytes(hexString: string, encoding: string): string{
+
+    const cleanedHexString = hexString.replace(/\s/g, '').replace(/[^0-9a-fA-F]/g, '');
+    if (cleanedHexString.length % 2 !== 0) {
+      throw new Error('Invalid hexadecimal string. It should have an even number of characters.');
+    }
+    let plainString = utf8HexBytesToPlain(cleanedHexString);
+    switch (encoding) {
+        case Encoding.HEX:
+          let hexString = '';
+          for (let i = 0; i < plainString.length; i++) {
+            const charCode = plainString.charCodeAt(i);
+            // Replace non-ASCII characters with '?'
+            const hexByte = charCode >= 32 && charCode <= 126 ? charCode.toString(16).toUpperCase().padStart(2, '0') : '3F';
+            hexString += hexByte;
+          }
+          return _justify(hexString, encoding);
+
+        case Encoding.BINARY:
+            let binaryString = cleanedHexString
+                .split('')
+                .map((hex) => parseInt(hex, 16).toString(2).padStart(4, '0'))
+                .join('');
+            return _justify(binaryString, encoding);
+        
+        case Encoding.ASCII:
+          return _encodeString(plainString, encoding);
+
+        case Encoding.PLAIN:
+          return plainString;
+          
+        case Encoding.UTF8:
+            
+            return _encodeString(plainString, encoding);
+
+        case Encoding.UTF16:
+            return _encodeString(plainString, encoding);
+
+        case Encoding.UTF32:
+            return _encodeString(plainString, encoding);
+
+        case Encoding.RAW:
+            const rawBytes = [];
+            for (let i = 0; i < cleanedHexString.length; i += 2) {
+              rawBytes.push(cleanedHexString.substr(i, 2));
+            }
+            return rawBytes.join(' ')+' ';
+        
+        default:
+            throw new Error("Unsupported encoding");
+    }
+}
+
+
 export function _resetIndex(){
     index = 0;
 }
+
+function utf8HexBytesToPlain(hexString: string){
+  const utf8Array = [];
+          for (let i = 0; i < hexString.length; i += 2) {
+            const hexPair = hexString.substr(i, 2);
+            utf8Array.push(parseInt(hexPair, 16));
+          }
+          const utf8String = new TextDecoder().decode(Uint8Array.from(utf8Array));
+          return utf8String;
+}
+
+function _justify(input: string, encoding: string):string {
+  let formattedString = "";
+  let i = 0;
+  switch (encoding) {
+    case Encoding.HEX:
+      for (i ; i < input.length; i += 2) {
+          formattedString += input.substr(i, 2) + " ";
+          if ((i+index + 2) % 16 === 0) {
+              formattedString += " ";
+          }
+      }
+      index += i;
+      return formattedString;
+
+    case Encoding.BINARY:
+      for (i ; i < input.length; i += 1) {
+          formattedString += input[i];
+          if ((i+index + 1) % 8 === 0) {
+              formattedString += " ";
+          }
+      }
+      index += i;
+      return formattedString;
+    
+    default:
+      return input;
+  }
+}
+
+export function _utf8StringToBytesHex(utf8String: string): string {
+    const encoder = new TextEncoder();
+    const utf8Encoded = encoder.encode(utf8String);
+  
+    const hexBytesArray: string[] = [];
+    for (const byte of utf8Encoded) {
+      hexBytesArray.push(byte.toString(16).padStart(2, '0').toUpperCase());
+    }
+  
+    return hexBytesArray.join('');
+  }

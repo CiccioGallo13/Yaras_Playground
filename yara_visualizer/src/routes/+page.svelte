@@ -12,8 +12,6 @@
     import type { HighlightedMatches, JsonRequest, JsonResponse, State } from '../model/model';
     import MatchingTable from '../components/matching-table.svelte';
 
-
-
     onMount(async () => {
         document.getElementsByTagName("body")[0].setAttribute("data-load", "complete");
     });
@@ -101,6 +99,7 @@
             window.location.hash = '#state='+hashString;
         }
     }
+    
     const matchUrl = $page.url.hash.match(/#state=(.*)/);
     if (matchUrl) {
         const state: State = Utils.uncompress(matchUrl[1]);

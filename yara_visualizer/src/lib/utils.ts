@@ -71,7 +71,7 @@ function stringToUTF32(input: string): string {
         case Encoding.ASCII:
           return Array.from(input)
               .map((char) => char.charCodeAt(0).toString(10))
-              .join(" ")+' ';
+              .join(" ");
 
         case Encoding.UTF8:
           return stringToUTF8(input);
@@ -131,7 +131,8 @@ export function _decodeFromUTF8Bytes(hexString: string, encoding: string): strin
             return _justify(binaryString, encoding);
         
         case Encoding.ASCII:
-          return _encodeString(plainString, encoding);
+          let asciiString = _encodeString(plainString, encoding);
+          return ((asciiString.length > 0) ? asciiString+' ': asciiString);
 
         case Encoding.PLAIN:
           return plainString;
@@ -149,9 +150,9 @@ export function _decodeFromUTF8Bytes(hexString: string, encoding: string): strin
         case Encoding.RAW:
             const rawBytes = [];
             for (let i = 0; i < cleanedHexString.length; i += 2) {
-              rawBytes.push(cleanedHexString.substr(i, 2));
+              rawBytes.push(cleanedHexString.substr(i, 2)+' ');
             }
-            return rawBytes.join(' ')+' ';
+            return rawBytes.join('');
         
         default:
             throw new Error("Unsupported encoding");

@@ -31,8 +31,21 @@ Regex
 HexString
 	= "{" _ (HexByte __ / Jump __/ OrHex __)+ _ "}" [ ]* "private"?
 
-RegularExpression
-	= [^/\(\)\[\]\{\}\-\.|]
+
+RegularEpression
+	= Grouping Quantifier / Bracketed Quantifier / RegexChar
+    
+
+
+RegexChar
+	= ("\\t"/"\\n"/"\\r"/"\\f"/"\\a"/"\\xNN"
+    /"\\w"/"\\W"/"\\s"/"\\S"/"\\d"/"\\D"/"\\b"/"\\B"
+    /"\\\\"/"\\("/"\\)"/"\\["/"\\]"/"\\{"/"\\}"/"\\-"
+    /"\\."/"\\+"/"\\*"/"\\|"/"\\?"/"\\$"/"\\^"
+    /[^/\(\)\[\]\{\}\-\.|\*\+?$^])+
+
+Quantifier
+	= ([*+?]/"{"[0-9]","?"}"/
 
 HexByte
 	= _ "~"?[?0-9ABCDEF][?0-9ABCDEF]

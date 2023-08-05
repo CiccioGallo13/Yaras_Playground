@@ -26,21 +26,23 @@ TextString
 	= "\"" (Escape / [^\"\\])* "\"" [ ]* StringModifier?
 
 Regex
-	= "/" RegularExpression "/"("is"/"i"/"s")? [ ]* RegexModifier?
+	= ("/^"/"/") RegularExpression ("/"/"$/")("is"/"i"/"s")? [ ]* RegexModifier?
 
 HexString
 	= "{" _ (HexByte __ / Jump __/ OrHex __)+ _ "}" [ ]* "private"?
 
 RegularExpression
-	= ""
+	= [^/\(\)\[\]\{\}\-\.|]
 
 HexByte
-	= _ "~"?[?0-9ABCDEF].{2}
+	= _ "~"?[?0-9ABCDEF][?0-9ABCDEF]
     
-//TODO Il numero a destra dovrebbe essere sempre >= di quello a sinistra
-
 Jump
-	= _ "["_ ( (NumberLower256 "-" NumberLower256?) / NumberLower256 / "-") _ "]"
+	= _ "["_ ( Interval256 / NumberLower256 / "-") _ "]"
+    
+Interval256
+	= lb:NumberLower256 "-" ub:NumberLower256?
+    { if(typeof ub !== 'undefined' && parseInt(lb,10) > parseInt(ub,10)) error("invalid interval"); else return text() }
     
 OrHex
 	= _ "("_ OrHex+ _ "|" _ OrHex+ _ ")" / HexByte __
@@ -56,14 +58,16 @@ Integer "integer"
   = _ [0-9]+ { return parseInt(text(), 10); }
   
 NumberLower256
-	= ([2][5][0-6]) / ([2][0-4][0-9]) / ([1][0-9][0-9]) / [1-9][0-9] / [0-9]
+	= num:([2][5][0-6] / [2][0-4][0-9] / [1][0-9][0-9] / [1-9][0-9] / [0-9])
+    { if( typeof num === 'string' ) return num; else return num.join('') }
 
+//TODO controllare che ogni modificatore sia presente una sola volta
 StringModifier
 	= ("nocase" ([ ]+!("xor")!("base64")!("base64wide")AllModifier[ ]*)*)
     / ("wide" ([ ]+AllModifier[ ]*)*) / ("ascii" ([ ]+AllModifier[ ]*)*)
     / ("xor" ([ ]+!("nocase")!("base64")!("base64wide")AllModifier[ ]*)*)
-    / ("base64" ([ ]+!("xor")!("nocase")!("fullword")AllModifier[ ]*)*)
-    / ("base64wide" ([ ]+!("xor")!("nocase")!("fullword")AllModifier[ ]*)*)
+    / ("base64"CustomAlphabet? ([ ]+!("xor")!("nocase")!("fullword")AllModifier[ ]*)*)
+    / ("base64wide"CustomAlphabet? ([ ]+!("xor")!("nocase")!("fullword")AllModifier[ ]*)*)
     / ("fullword" ([ ]+!("base64")!("base64wide")AllModifier[ ]*)*)
 	/ ("private" ([ ]+AllModifier[ ]*)*)
     
@@ -72,7 +76,11 @@ RegexModifier
     / ("wide" ([ ]+ReModifier[ ]*)*) / ("ascii" ([ ]+ReModifier[ ]*)*)
     / ("fullword" ([ ]+ReModifier[ ]*)*)
 	/ ("private" ([ ]+ReModifier[ ]*)*)
-    
+
+CustomAlphabet
+	= "(\"" alphabet:( Escape / HexChar / [a-zA-Z0-9!@#$%^&*\(\)\{\}\[\]\.\-|] )+ "\")"
+    { if(alphabet.length != 64) error("invalid alphabet size, it must be 64 bytes long"); else return text() }
+
 ReModifier
 	= ("nocase" / "ascii" / "wide" / "fullword" / "private")
 
@@ -81,6 +89,9 @@ AllModifier
 
 Escape
 	= "\\\"" / "\\\\" / "\\t" / "\\n" / "\\xdd"
+
+HexChar
+	= "\\x"[0-9a-fA-F].{2}
 
 _ "whitespace"
   = [ \t\n\r]*

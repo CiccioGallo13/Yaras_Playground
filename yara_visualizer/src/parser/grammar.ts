@@ -33,23 +33,26 @@ HexString
 
 
 RegularExpression
-	= Grouping Quantifier / Bracketed Quantifier / RegexChar
+	= Grouping / Bracketed / RegexChar
     
 Grouping
-	= ""
+	= "(" RegularExpression+ ")" Quantifier? RegularExpression?
     
 Bracketed
-	= ""
+	= "["(RegexChar "^" RegexChar / "^" RegexChar)? RegularExpression* "]" Quantifier? RegularExpression?
 
 RegexChar
 	= ("\\t"/"\\n"/"\\r"/"\\f"/"\\a"/"\\xNN"
     /"\\w"/"\\W"/"\\s"/"\\S"/"\\d"/"\\D"/"\\b"/"\\B"
     /"\\\\"/"\\("/"\\)"/"\\["/"\\]"/"\\{"/"\\}"/"\\-"
-    /"\\."/"\\+"/"\\*"/"\\|"/"\\?"/"\\$"/"\\^"
-    /[^/\(\)\[\]\{\}\-\.|\*\+?$^])+
+    /"\\."/"\\+"/"\\*"/"\\|"/"\\?"/"\\$"/"\\^"/"\\/"
+    /[^/\\\(\)\[\]\{\}\.\*\+?$^])+
 
 Quantifier
-	= [*+?]/"{"[0-9]","?"}"
+	= ([*+?] / "{"( RegexOccurrenceInterval / [0-9]+","? / ","?[0-9]+)"}")"?"? 
+    
+RegexOccurrenceInterval
+	= lb:[0-9]+","ub:[0-9]+ { if(parseInt(lb.join(''),10) > parseInt(ub.join(''),10)) error("invalid interval")}
 
 HexByte
 	= _ "~"?[?0-9ABCDEF][?0-9ABCDEF]

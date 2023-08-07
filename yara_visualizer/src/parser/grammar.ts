@@ -13,11 +13,35 @@ Strings
 	= Variable+ 
     
 Condition
-	= "" _ 
-  	
+	= _ ConditionExpression+  _ 
+
+ConditionExpression
+	= ConditionVariableOperation / BooleanExpression / BooleanCondition
+
+BooleanExpression
+	= "(" _ ConditionExpression+ _ ")" _(("and"/"or")? _ ConditionExpression)?
+
+BooleanCondition
+	= (BooleanExpression/ConditionVariable)_ (("and"/"or")?(BooleanExpression/ConditionVariable))?
+
+ConditionVariable
+	="not defined"? _ type:[#$@!] name:VariableName sub:ArraySub? 
+    { if((type === '#' || type === '$') && sub) error("syntax error"); else return text().trim() }
+
+ConditionVariableOperation
+	= _ (ConditionVariableNumeric/[0-9]+) _ ConditionOperatorNumeric _ 
+    (ConditionVariableNumeric / [0-9]+ / "("ConditionVariableOperation+")") 
+    (_ ConditionOperatorNumeric _ (ConditionVariableNumeric / [0-9]+ / "("ConditionVariableOperation+")"))?
+    { return text().trim() }
+    
+ConditionVariableNumeric
+	= _ type:[#@!] name:VariableName sub:ArraySub? _ {if((type === '#') && sub) error("syntax error"); else return text().trim()}
+
+ArraySub
+	= "["[0-9]+"]"
 
 Variable
-	= _ "$"[_a-zA-Z][_\-$a-zA-Z0-9]* _ "=" _ VariableBody _n { return text().trim() }
+	= _ "$"VariableName _ "=" _ VariableBody _n { return text().trim() }
     
 VariableBody
 	= HexString / TextString / Regex
@@ -62,7 +86,7 @@ Jump
     
 Interval256
 	= lb:NumberLower256 "-" ub:NumberLower256?
-    { if(typeof ub !== 'undefined' && parseInt(lb,10) > parseInt(ub,10)) error("invalid interval"); else return text() }
+    { if( ub && parseInt(lb,10) > parseInt(ub,10)) error("invalid interval"); else return text() }
     
 OrHex
 	= _ "("_ OrHex+ _ "|" _ OrHex+ _ ")" / HexByte __
@@ -107,9 +131,18 @@ ReModifier
 AllModifier
 	= ("nocase" / "ascii" / "wide" / "fullword" / "base64" / "base64wide" / "xor" / "private")
 
+ConditionOperatorNumeric
+	= "<<" / ">>" / "<=" / ">=" / "==" / "!=" 
+    /[\-\~\*\\%\+&^|<>]
+
+ConditionOperatorStrings
+	= "i"? ("contains"/"startswith"/"endswith") / "iequals" / "matches"
+
 Escape
 	= "\\\"" / "\\\\" / "\\t" / "\\n" / "\\xdd"
-
+VariableName
+	= [_a-zA-Z][_\-$a-zA-Z0-9]*
+   
 HexChar
 	= "\\x"[0-9a-fA-F].{2}
 

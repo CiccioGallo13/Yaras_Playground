@@ -1,10 +1,16 @@
 
 const GRAMMAR = `
 Expression
-  = "rule" RuleName "{" _ ("meta:"Meta)? _ ("strings:"Strings)? _ ("condition:"Condition) _ "}"
+  	= Import* "rule" RuleName (":" RuleNameImport+)? "{" _ ("meta:"Meta)? _ ("strings:"Strings)? _ ("condition:"Condition) _ "}"
+
+Import
+	= "import" _ "\"" VariableName "\"" _n { return text().trim() }
 
 RuleName
 	= __ [_a-zA-Z][_\-$a-zA-Z0-9]* _ { return text().trim() }
+    
+RuleNameImport
+	= _ [_a-zA-Z][_\-$a-zA-Z0-9]* _ { return text().trim() }
 
 Meta
 	= _ KeyValuePair+ _ { return text().trim()}
@@ -16,26 +22,35 @@ Condition
 	= _ ConditionExpression+  _ 
 
 ConditionExpression
-	= ConditionVariableOperation / BooleanExpression / BooleanCondition
+	= BooleanCondition / ConditionVariableOperation / BooleanExpression / InInterval
 
 BooleanExpression
 	= "(" _ ConditionExpression+ _ ")" _(("and"/"or")? _ ConditionExpression)?
 
 BooleanCondition
-	= (BooleanExpression/ConditionVariable)_ (("and"/"or")?(BooleanExpression/ConditionVariable))?
+	= (BooleanExpression/InInterval/ConditionVariableOperation/ConditionVariable)_ (("and"/"or")?(BooleanExpression/InInterval/ConditionVariableOperation/ConditionVariable))?
 
 ConditionVariable
 	="not defined"? _ type:[#$@!] name:VariableName sub:ArraySub? 
     { if((type === '#' || type === '$') && sub) error("syntax error"); else return text().trim() }
 
 ConditionVariableOperation
-	= _ (ConditionVariableNumeric/[0-9]+) _ ConditionOperatorNumeric _ 
-    (ConditionVariableNumeric / [0-9]+ / "("ConditionVariableOperation+")") 
-    (_ ConditionOperatorNumeric _ (ConditionVariableNumeric / [0-9]+ / "("ConditionVariableOperation+")"))?
+	= _ ("filesize"/ImportFunction/ConditionVariableNumeric/CondInteger) _ ConditionOperatorNumeric _ 
+    ("filesize"/ImportFunction/ConditionVariableNumeric / CondInteger / "("ConditionVariableOperation+")") 
+    (_ ConditionOperatorNumeric _ ("filesize"/ImportFunction/ConditionVariableNumeric / CondInteger / "("ConditionVariableOperation+")"))?
+    
     { return text().trim() }
     
 ConditionVariableNumeric
 	= _ type:[#@!] name:VariableName sub:ArraySub? _ {if((type === '#') && sub) error("syntax error"); else return text().trim()}
+
+InInterval
+	= [$#]VariableName _ "in" _ "(" ConditionVariableInterval ".." ConditionVariableInterval ")"
+
+ConditionVariableInterval
+	= _ ("(" _ (ConditionVariableNumeric/CondInteger/"filesize"/ImportFunction) _ ")" /(ConditionVariableNumeric/[0-9]+/"filesize"/ImportFunction)) _ (([\-\~\*\\%\+&^|]/"<<"/">>") _ 
+    (ConditionVariableNumeric / CondInteger /"filesize"/ImportFunction/"("ConditionVariableInterval+")"))?
+    (_ ([\-\~\*\\%\+&^|]/"<<"/">>") _ (ConditionVariableNumeric / CondInteger / "filesize"/ImportFunction/ "("ConditionVariableInterval+")"))?
 
 ArraySub
 	= "["[0-9]+"]"
@@ -45,6 +60,9 @@ Variable
     
 VariableBody
 	= HexString / TextString / Regex
+
+ImportFunction
+	= ("pe"/"cuckoo")"."VariableName
 
 TextString
 	= "\"" (Escape / [^\"\\])* "\"" [ ]* StringModifier?
@@ -99,7 +117,10 @@ String
 	= "\"" [^\"]* "\""
     
 Integer "integer"
-  = _ [0-9]+ { return parseInt(text(), 10); }
+  	= _ [0-9]+ { return parseInt(text(), 10); }
+ 
+CondInteger
+	= _ [0-9]+("KB"/"MB")?
   
 NumberLower256
 	= num:([2][5][0-6] / [2][0-4][0-9] / [1][0-9][0-9] / [1-9][0-9] / [0-9])

@@ -1,7 +1,7 @@
 
 const GRAMMAR = `
 Expression
-  	= Import* "rule" RuleName (":" RuleNameImport+)? "{" _ ("meta:"Meta)? _ ("strings:"Strings)? _ ("condition:"Condition) _ "}"
+  	= Import* "rule" RuleName (":" RuleNameImport+)? "{" _ ("meta:"Meta)? _ ("strings:"Strings)? _ ("condition:"Condition) _ "}" _
 
 Import
 	= "import" _ "\"" VariableName "\"" _n { return text().trim() }
@@ -19,25 +19,27 @@ Strings
 	= Variable+ 
     
 Condition
-	= _ ConditionExpression+  _ 
+	= _ (BooleanExpression / BooleanExpression1 )  _ 
 
 ConditionExpression
-	= BooleanCondition / ConditionVariableOperation / BooleanExpression / InInterval
+	=   ConditionVariableOperation / BooleanExpression1 / BooleanExpression / InInterval / ConditionVariable
 
 BooleanExpression
-	= "(" _ ConditionExpression+ _ ")" _(("and"/"or")? _ ConditionExpression)?
+	= "(" _ ConditionExpression+ _ ")" _ ( _ ("and"/"or") _ ConditionExpression)*
 
-BooleanCondition
-	= (BooleanExpression/InInterval/ConditionVariableOperation/ConditionVariable)_ (("and"/"or")?(BooleanExpression/InInterval/ConditionVariableOperation/ConditionVariable))?
+BooleanExpression1
+	= _ (ConditionVariableOperation  / BooleanExpression / InInterval / ConditionVariable)+ _ ( _ ("and"/"or") _ ConditionExpression)*
 
+
+    
 ConditionVariable
 	="not defined"? _ type:[#$@!] name:VariableName sub:ArraySub? 
     { if((type === '#' || type === '$') && sub) error("syntax error"); else return text().trim() }
 
 ConditionVariableOperation
-	= _ ("filesize"/ImportFunction/ConditionVariableNumeric/CondInteger) _ ConditionOperatorNumeric _ 
-    ("filesize"/ImportFunction/ConditionVariableNumeric / CondInteger / "("ConditionVariableOperation+")") 
-    (_ ConditionOperatorNumeric _ ("filesize"/ImportFunction/ConditionVariableNumeric / CondInteger / "("ConditionVariableOperation+")"))?
+	= _ ("filesize"/DataAccess/ImportFunction/ConditionVariableNumeric/VirtualAddress/CondInteger) _ ConditionOperatorNumeric _ 
+    ("filesize"/DataAccess/ImportFunction/ConditionVariableNumeric / VirtualAddress /CondInteger / "("ConditionVariableOperation+")") 
+    (_ ConditionOperatorNumeric _ ("filesize"/DataAccess/ImportFunction/ConditionVariableNumeric / VirtualAddress / CondInteger / "("ConditionVariableOperation+")"))?
     
     { return text().trim() }
     
@@ -45,7 +47,8 @@ ConditionVariableNumeric
 	= _ type:[#@!] name:VariableName sub:ArraySub? _ {if((type === '#') && sub) error("syntax error"); else return text().trim()}
 
 InInterval
-	= [$#]VariableName _ "in" _ "(" ConditionVariableInterval ".." ConditionVariableInterval ")"
+	= "$" VariableName _ "at" _ (CondInteger / "(" _ CondInteger _ ")")
+    / [$#]VariableName _ "in" _ "(" ConditionVariableInterval ".." ConditionVariableInterval ")"
 
 ConditionVariableInterval
 	= _ ("(" _ (ConditionVariableNumeric/CondInteger/"filesize"/ImportFunction) _ ")" /(ConditionVariableNumeric/[0-9]+/"filesize"/ImportFunction)) _ (([\-\~\*\\%\+&^|]/"<<"/">>") _ 
@@ -145,6 +148,12 @@ RegexModifier
 CustomAlphabet
 	= "(\"" alphabet:( Escape / HexChar / [a-zA-Z0-9!@#$%^&*\(\)\{\}\[\]\.\-|] )+ "\")"
     { if(alphabet.length != 64) error("invalid alphabet size, it must be 64 bytes long"); else return text() }
+
+DataAccess
+	= "u"?"int" ("8"/"16"/"32") "be"? "(" _ (VirtualAddress/CondInteger/DataAccess)_ ")"
+
+VirtualAddress
+	= "0x"[0-9a-fA-F]+
 
 ReModifier
 	= ("nocase" / "ascii" / "wide" / "fullword" / "private")

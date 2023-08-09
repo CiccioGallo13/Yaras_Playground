@@ -1,12 +1,22 @@
 
 const GRAMMAR = `
-Expression
-  	= Import* "rule" RuleName (":" RuleNameImport+)? "{" _ ("meta:"Meta)? _ ("strings:"Strings)? _ ("condition:"Condition) _ "}" _
+Rules
+	= (Import* _ {return text().trim()}) ( RuleType? Rule)+
+
+RuleType
+	= (p:"private" __ g:"global" __ { return [p,g] }  
+    / g:"global" __ p:"private" __ { return [p,g] }
+    / ("global"/"private") __) { return text().trim() }
+    
+
+Rule
+  	= _ rule:"rule" RuleName tag:(":" RuleNameImport+)? body:("{" _ meta:("meta:"Meta)? _ str:("strings:"Strings)? _ cond:("condition:"Condition) _ "}" {return [meta, str, cond] }) _
+	{ return [rule, tag, body] }
 
 //TODO: Implment Anonymous strings
 
 Import
-	= "import" _ "\"" VariableName "\"" _n { return text().trim() }
+	=  _"import" _ "\"" VariableName "\"" _n { return text().trim() }
 
 RuleName
 	= __ [_a-zA-Z][_\-$a-zA-Z0-9]* _ { return text().trim() }
@@ -15,7 +25,7 @@ RuleNameImport
 	= _ [_a-zA-Z][_\-$a-zA-Z0-9]* _ { return text().trim() }
 
 Meta
-	= _ KeyValuePair+ _ { return text().trim()}
+	= _ val:KeyValuePair+ _ { return val}
     
 Strings
 	= Variable+ 
@@ -24,13 +34,13 @@ Condition
 	= _ ("not defined"/"not")? _ (BooleanExpression / BooleanExpression1 )  _ 
 
 ConditionExpression
-	=   ("not defined"/"not")? _ (ConditionVariableOperation / BooleanExpression1 / BooleanExpression / StringSet / InInterval / ConditionVariable)
+	=   ("not defined"/"not")? _ (ConditionVariableOperation / For / BooleanExpression1 / BooleanExpression / InInterval / StringSet / ConditionVariable)
 
 BooleanExpression
-	= "(" _ ConditionExpression+ _ ")" _ ( _ ("and"/"or") _ ConditionExpression)*
+	= "(" _ ConditionExpression _ ")" _ ( _ ("and"/"or") _ ConditionExpression)*
 
 BooleanExpression1
-	= _ (ConditionVariableOperation  / BooleanExpression / StringSet / InInterval / ConditionVariable)+ _ ( _ ("and"/"or") _ ConditionExpression)*
+	= _ (ConditionVariableOperation / For / BooleanExpression / InInterval / StringSet / ConditionVariable) _ ( _ ("and"/"or") _ ConditionExpression)*
 
 
     
@@ -49,8 +59,11 @@ ConditionVariableNumeric
 	= _ "~"? _ type:[#@!] name:VariableName sub:ArraySub? _ {if((type === '#') && sub) error("syntax error"); else return text().trim()}
 
 InInterval
-	= _ ("not defined"/"not")? _ ("$" VariableName _ "at" _ (CondInteger / "(" _ CondInteger _ ")")
-    / not:"~"? type:[$#] VariableName _ "in" _ "(" ConditionVariableInterval ".." ConditionVariableInterval ")" { if(not && type === '$') error("syntax error"); else return text().trim() } )
+	= _ ("not defined"/"not")? _ (("$" VariableName/StringSet) _ "at" _ (CondInteger / "(" _ CondInteger _ ")")
+    / IntervalVariable _ "in" _ "(" ConditionVariableInterval ".." ConditionVariableInterval ")") { return text().trim() } 
+
+IntervalVariable
+	= not:"~"? type:[$#] VariableName { if(not && type === '$') error("syntax error"); else return text().trim() }  / StringSet 
 
 ConditionVariableInterval
 	= _ ("not defined"/"not")? _ "~"? _ ("(" _ ("not defined"/"not")? _ "~"? _ (ConditionVariableNumeric/CondInteger/"filesize"/ImportFunction) _ ")" /(ConditionVariableNumeric/[0-9]+/"filesize"/ImportFunction)) _ (NumericOperator _ 
@@ -58,7 +71,34 @@ ConditionVariableInterval
     ( NumericOperator _ "~"? _ (ConditionVariableNumeric / CondInteger / "filesize"/ImportFunction/ "("ConditionVariableInterval+")"))?
 
 StringSet
-	= ("any"/"all"/"none"/Integer) _ "of" __ ("them"/"(" _ ("$*"/"$" VariableName "*"? (_ "," _ "$" VariableName "*"?)*) _ ")")
+	= ("any"/ "all" / "none" / Integer) _ "of" __ ("them"/"(" _ ("$*"/"$" VariableName "*"? (_ "," _ "$" VariableName "*"?)*) _ ")")
+
+//TODO Check that the variable used for accessing the data is referenced in 'ForInterval'
+For
+	= "for" __ ForInterval ":" _ "(" ForContext ")"
+    
+ForContext
+	= _  (BooleanForContext/BooleanForContext1) _ {return text().trim() }
+
+ConditionExpressionFor
+	=   ("not defined"/"not")? _ (ForVariableOperation / BooleanForContext1 / BooleanForContext / InInterval / StringSet / ConditionVariable)
+
+BooleanForContext
+	= "(" _ ConditionExpressionFor _ ")" _ ( _ ("and"/"or") _ ConditionExpressionFor)*
+
+BooleanForContext1
+	= _ (ForVariableOperation / BooleanForContext / InInterval / StringSet / ConditionVariable) _ ( _ ("and"/"or") _ ConditionExpressionFor)*
+
+ForVariableOperation
+	= _ ("filesize"/ForVariable/DataAccess/ImportFunction/ConditionVariableNumeric/VirtualAddress/CondInteger/String) _ ConditionOperatorNumeric _ 
+    ("filesize"/ForVariable/DataAccess/ImportFunction/ConditionVariableNumeric / VirtualAddress /CondInteger / String / "("ConditionVariableOperation+")") 
+    (_ ConditionOperatorNumeric _ ("filesize"/ForVariable/DataAccess/ImportFunction/ConditionVariableNumeric / VirtualAddress / CondInteger /String / "("ConditionVariableOperation+")"))?
+
+ForVariable
+	= [@!]? (VariableName ".")? VariableName ("[" _ (VariableName/[0-9]+) _ "]")? ("." VariableName)?
+
+ForInterval
+ = _ ("any"/"all"/"none"/Integer) _ VariableName _ ("," _ VariableName)* _ "in" _ "(" ConditionVariableInterval ".." ConditionVariableInterval ")" _ { return text().trim() }
 
 ArraySub
 	= "["[0-9]+"]"
@@ -67,7 +107,7 @@ NumericOperator
 	= _ ([\-\*\\%\+&^|]/"<<"/">>") _ { return text().trim() }
 
 Variable
-	= _ "$"VariableName _ "=" _ VariableBody _n { return text().trim() }
+	= _ key:("$"VariableName) _ "=" _ val:VariableBody _n { return [key.join('')+" = ", val] }
     
 VariableBody
 	= HexString / TextString / Regex
@@ -76,7 +116,7 @@ ImportFunction
 	= ("pe"/"cuckoo")"."VariableName
 
 TextString
-	= "\"" (Escape / [^\"\\])* "\"" [ ]* StringModifier?
+	= "\"" str:(Escape / [^\"\\])* "\"" [ ]* mod:StringModifier? { return ["\""+str.join('')+"\"",mod]}
 
 Regex
 	= ("/^"/"/") RegularExpression ("/"/"$/")("is"/"i"/"s")? [ ]* RegexModifier?
@@ -122,14 +162,14 @@ OrHex
    
 
 KeyValuePair
-	= [a-zA-Z0-9]+ _ "=" _ (Integer / String / "true" / "false") _n { return text() }
+	= key:[a-zA-Z0-9]+ _ "=" _ val:(Integer / String / "true" / "false") _ { return key.join('')+" = "+val }
     
 String
-	= "\"" [^\"]* "\""
+	= "\"" str:[^\"]* "\"" { return "\""+str.join('')+"\""}
     
 Integer "integer"
-  	= _ ("(" _ (ConditionVariableNumeric/Integer/ [0-9]+) _ (_ NumericOperator _ Integer)* _ ")" _ 
-    / _ (ConditionVariableNumeric/[0-9]+) (_ NumericOperator _ Integer)* _ ) { return parseInt(text().trim(), 10); }
+  	=( _ ("(" _ (ConditionVariableNumeric/Integer/ [0-9]+) _ (_ NumericOperator _ Integer)* _ ")" _ 
+    / _ (ConditionVariableNumeric/[0-9]+) (_ NumericOperator _ Integer)* _ )) { return text().trim(); }
  
 CondInteger
 	= _ [0-9]+("KB"/"MB")?
@@ -140,23 +180,23 @@ NumberLower256
 
 //TODO controllare che ogni modificatore sia presente una sola volta
 StringModifier
-	= ("nocase" ([ ]+!("xor")!("base64")!("base64wide")AllModifier[ ]*)*)
-    / ("wide" ([ ]+AllModifier[ ]*)*) / ("ascii" ([ ]+AllModifier[ ]*)*)
-    / ("xor" ([ ]+!("nocase")!("base64")!("base64wide")AllModifier[ ]*)*)
-    / ("base64"CustomAlphabet? ([ ]+!("xor")!("nocase")!("fullword")AllModifier[ ]*)*)
-    / ("base64wide"CustomAlphabet? ([ ]+!("xor")!("nocase")!("fullword")AllModifier[ ]*)*)
-    / ("fullword" ([ ]+!("base64")!("base64wide")AllModifier[ ]*)*)
-	/ ("private" ([ ]+AllModifier[ ]*)*)
-    
+	= mod:"nocase" mod1:(__ !("xor")!("base64")!("base64wide") m:AllModifier {return m} )* { return [mod].concat(mod1) } 
+    / mod:"wide" mod1:(__ m:AllModifier {return m} )* { return [mod].concat(mod1) } / mod:"ascii" mod1:(__  m:AllModifier {return m} )* { return [mod].concat(mod1) }
+    / mod:"xor" mod1:(__ !("nocase")!("base64")!("base64wide") m:AllModifier {return m} )* { return [mod].concat(mod1) }
+    / mod:"base64" al:CustomAlphabet? mod1:(__ !("xor")!("nocase")!("fullword") m:AllModifier {return m} )* { return [mod, al].concat(mod1) }
+    / mod:"base64wide" al:CustomAlphabet? mod1:(__ !("xor")!("nocase")!("fullword") m:AllModifier {return m} )* { return [mod, al].concat(mod1) }
+    / mod:"fullword" mod1:(__ !("base64")!("base64wide") m:AllModifier {return m} )* { return [mod].concat(mod1) }
+	/ mod:"private" mod1:(__  m:AllModifier {return m} )* { return [mod].concat(mod1) }
+
 RegexModifier
-	= ("nocase" ([ ]+ReModifier[ ]*)*)
-    / ("wide" ([ ]+ReModifier[ ]*)*) / ("ascii" ([ ]+ReModifier[ ]*)*)
-    / ("fullword" ([ ]+ReModifier[ ]*)*)
-	/ ("private" ([ ]+ReModifier[ ]*)*)
+	= "nocase" (__ ReModifier)*
+    / "wide" (__ ReModifier)* / "ascii" (__ ReModifier)*
+    / "fullword" (__ ReModifier)*
+	/ "private" (__ ReModifier)*
 
 CustomAlphabet
 	= "(\"" alphabet:( Escape / HexChar / [a-zA-Z0-9!@#$%^&*\(\)\{\}\[\]\.\-|] )+ "\")"
-    { if(alphabet.length != 64) error("invalid alphabet size, it must be 64 bytes long"); else return text() }
+    { if(alphabet.length != 64) error("invalid alphabet size, it must be 64 bytes long"); else return "(\""+alphabet.join('')+"\")" }
 
 DataAccess
 	= "u"?"int" ("8"/"16"/"32") "be"? "(" _ (VirtualAddress/CondInteger/DataAccess)_ ")"
@@ -181,7 +221,7 @@ Escape
 	= "\\\"" / "\\\\" / "\\t" / "\\n" / "\\xdd"
 
 VariableName
-	= [_a-zA-Z][_\-$a-zA-Z0-9]*
+	= [_a-zA-Z][_\-$a-zA-Z0-9]* { return text().trim() }
    
 HexChar
 	= "\\x"[0-9a-fA-F].{2}

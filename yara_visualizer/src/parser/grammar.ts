@@ -3,6 +3,8 @@ const GRAMMAR = `
 Expression
   	= Import* "rule" RuleName (":" RuleNameImport+)? "{" _ ("meta:"Meta)? _ ("strings:"Strings)? _ ("condition:"Condition) _ "}" _
 
+//TODO: Implment Anonymous strings
+
 Import
 	= "import" _ "\"" VariableName "\"" _n { return text().trim() }
 
@@ -19,22 +21,22 @@ Strings
 	= Variable+ 
     
 Condition
-	= _ (BooleanExpression / BooleanExpression1 )  _ 
+	= _ ("not defined"/"not")? _ (BooleanExpression / BooleanExpression1 )  _ 
 
 ConditionExpression
-	=   ConditionVariableOperation / BooleanExpression1 / BooleanExpression / InInterval / ConditionVariable
+	=   ("not defined"/"not")? _ (ConditionVariableOperation / BooleanExpression1 / BooleanExpression / StringSet / InInterval / ConditionVariable)
 
 BooleanExpression
 	= "(" _ ConditionExpression+ _ ")" _ ( _ ("and"/"or") _ ConditionExpression)*
 
 BooleanExpression1
-	= _ (ConditionVariableOperation  / BooleanExpression / InInterval / ConditionVariable)+ _ ( _ ("and"/"or") _ ConditionExpression)*
+	= _ (ConditionVariableOperation  / BooleanExpression / StringSet / InInterval / ConditionVariable)+ _ ( _ ("and"/"or") _ ConditionExpression)*
 
 
     
 ConditionVariable
-	="not defined"? _ type:[#$@!] name:VariableName sub:ArraySub? 
-    { if((type === '#' || type === '$') && sub) error("syntax error"); else return text().trim() }
+	=("not defined"/"not")? _ not:"~"? _ type:[#$@!] name:VariableName sub:ArraySub? 
+    { if(((type === '#' || type === '$') && sub) || (type === '$' && not)) error("syntax error"); else return text().trim() }
 
 ConditionVariableOperation
 	= _ ("filesize"/DataAccess/ImportFunction/ConditionVariableNumeric/VirtualAddress/CondInteger) _ ConditionOperatorNumeric _ 
@@ -44,19 +46,25 @@ ConditionVariableOperation
     { return text().trim() }
     
 ConditionVariableNumeric
-	= _ type:[#@!] name:VariableName sub:ArraySub? _ {if((type === '#') && sub) error("syntax error"); else return text().trim()}
+	= _ "~"? _ type:[#@!] name:VariableName sub:ArraySub? _ {if((type === '#') && sub) error("syntax error"); else return text().trim()}
 
 InInterval
-	= "$" VariableName _ "at" _ (CondInteger / "(" _ CondInteger _ ")")
-    / [$#]VariableName _ "in" _ "(" ConditionVariableInterval ".." ConditionVariableInterval ")"
+	= _ ("not defined"/"not")? _ ("$" VariableName _ "at" _ (CondInteger / "(" _ CondInteger _ ")")
+    / not:"~"? type:[$#] VariableName _ "in" _ "(" ConditionVariableInterval ".." ConditionVariableInterval ")" { if(not && type === '$') error("syntax error"); else return text().trim() } )
 
 ConditionVariableInterval
-	= _ ("(" _ (ConditionVariableNumeric/CondInteger/"filesize"/ImportFunction) _ ")" /(ConditionVariableNumeric/[0-9]+/"filesize"/ImportFunction)) _ (([\-\~\*\\%\+&^|]/"<<"/">>") _ 
-    (ConditionVariableNumeric / CondInteger /"filesize"/ImportFunction/"("ConditionVariableInterval+")"))?
-    (_ ([\-\~\*\\%\+&^|]/"<<"/">>") _ (ConditionVariableNumeric / CondInteger / "filesize"/ImportFunction/ "("ConditionVariableInterval+")"))?
+	= _ ("not defined"/"not")? _ "~"? _ ("(" _ ("not defined"/"not")? _ "~"? _ (ConditionVariableNumeric/CondInteger/"filesize"/ImportFunction) _ ")" /(ConditionVariableNumeric/[0-9]+/"filesize"/ImportFunction)) _ (NumericOperator _ 
+    "~"? _ (ConditionVariableNumeric / CondInteger /"filesize"/ImportFunction/"("ConditionVariableInterval+")"))?
+    ( NumericOperator _ "~"? _ (ConditionVariableNumeric / CondInteger / "filesize"/ImportFunction/ "("ConditionVariableInterval+")"))?
+
+StringSet
+	= ("any"/"all"/"none"/Integer) _ "of" __ ("them"/"(" _ ("$*"/"$" VariableName "*"? (_ "," _ "$" VariableName "*"?)*) _ ")")
 
 ArraySub
 	= "["[0-9]+"]"
+
+NumericOperator
+	= _ ([\-\*\\%\+&^|]/"<<"/">>") _ { return text().trim() }
 
 Variable
 	= _ "$"VariableName _ "=" _ VariableBody _n { return text().trim() }
@@ -120,7 +128,8 @@ String
 	= "\"" [^\"]* "\""
     
 Integer "integer"
-  	= _ [0-9]+ { return parseInt(text(), 10); }
+  	= _ ("(" _ (ConditionVariableNumeric/Integer/ [0-9]+) _ (_ NumericOperator _ Integer)* _ ")" _ 
+    / _ (ConditionVariableNumeric/[0-9]+) (_ NumericOperator _ Integer)* _ ) { return parseInt(text().trim(), 10); }
  
 CondInteger
 	= _ [0-9]+("KB"/"MB")?
@@ -163,13 +172,14 @@ AllModifier
 
 ConditionOperatorNumeric
 	= "<<" / ">>" / "<=" / ">=" / "==" / "!=" 
-    /[\-\~\*\\%\+&^|<>]
+    /[\-\*\\%\+&^|<>]
 
 ConditionOperatorStrings
 	= "i"? ("contains"/"startswith"/"endswith") / "iequals" / "matches"
 
 Escape
 	= "\\\"" / "\\\\" / "\\t" / "\\n" / "\\xdd"
+
 VariableName
 	= [_a-zA-Z][_\-$a-zA-Z0-9]*
    

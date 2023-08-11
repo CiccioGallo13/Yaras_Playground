@@ -33,20 +33,21 @@ Strings
 	= Variable+ 
     
 Condition
-	= _ def:("not defined"/"not")? _ exp:(InInterval/StringSet/BooleanExpression / BooleanExpression1 )  _ 
-    { if(def!=null) return [def,exp]; else return exp }
+	= _ def:("not defined"/"not")? _ exp:(BooleanExpression / BooleanExpression1 )  _ 
+    { return { prefix: def, expression: exp} }
 
 ConditionExpression
 	=   def:("not defined"/"not")? _ exp:(InInterval/StringSet/ ConditionVariableOperation / For / BooleanExpression1 / BooleanExpression / ConditionVariable)
-    { if(def!=null) return [def,exp]; else return exp }
+    { return { prefix: def, expression: exp} }
     
 BooleanExpression
-	= "(" _ b:ConditionExpression _ ")" _ b1:( _ log:("and"/"or") _ exp:ConditionExpression { return [log,exp]} )*
-    { return ["(",b,")"].concat(b1) }
+	= "(" _ b1:ConditionExpression _ ")" _ op:("and"/"or") _ b2:ConditionExpression { return { left: b1, operator: op , right: b2} }
+	/  "(" _ b1:ConditionExpression _ ")" {return b1}
 
 BooleanExpression1
-	= _ b:(InInterval/ StringSet / ConditionVariableOperation / For / BooleanExpression / ConditionVariable) _ b1:( _ log:("and"/"or") _ exp:ConditionExpression { return [log, exp] })*
-    { return [b].concat(b1) }
+	= _ b1:(InInterval/ StringSet / ConditionVariableOperation / For / BooleanExpression / ConditionVariable) _ op:("and"/"or") _ b2:ConditionExpression { return { left: b1, operator: op , right: b2} }
+	/  _ b1:(InInterval/ StringSet / ConditionVariableOperation / For / BooleanExpression / ConditionVariable) {return b1}
+
 
 
     
@@ -55,19 +56,18 @@ ConditionVariable
     { if(((type === '#' || type === '$') && sub) || (type === '$' && not)) error("syntax error"); else return text().trim() }
 
 ConditionVariableOperation
-	= _ c1:("filesize"/DataAccess/ImportFunction/ConditionVariableNumeric/VirtualAddress/CondInteger) _ op:ConditionOperatorNumeric _ 
-    c2:("filesize"/DataAccess/ImportFunction/ConditionVariableNumeric / VirtualAddress /CondInteger / "("ConditionVariableOperation+")") 
-    c3:(_ op1:ConditionOperatorNumeric _ c:("filesize"/DataAccess/ImportFunction/ConditionVariableNumeric / VirtualAddress / CondInteger / "("ConditionVariableOperation+")") {return op1+c})?    
-    { if(c3!=null) return [c1,op,c2,c3]; else return [c1,op,c2] }
+	= _ lb:"("? c1:(DataAccess/ImportFunction/ConditionVariableNumeric/VirtualAddress/CondInteger/Integer) rb:")"? _ op:ConditionOperatorNumeric _ 
+    lb1:"(" _ c2:(DataAccess/ImportFunction/ConditionVariableNumeric / VirtualAddress /CondInteger/Integer) _ rb1:")"    
+    { if(((lb != null && rb != null) || (lb == null && rb == null) )&& ((lb1 != null && rb1 != null) || (lb1 == null && rb1 == null) ) )return {left: c1, operator: op, right: c2}; else error("syntax error") }
     
 ConditionVariableNumeric
 	= _ "~"? _ type:[#@!] name:VariableName sub:ArraySub? _ {if((type === '#') && sub) error("syntax error"); else return text().trim()}
 
 InInterval
-	= _ def:("not defined"/"not")? _ arg:("$" VariableName {return text().trim()}/StringSet) _ "at" _ int:(CondInteger / "(" _ c:CondInteger _ ")" { return ["(",c,")"]})
-    { let def1 = (def != null) ? [def ]: []; return def1.concat([arg,"at",int])}
-    / val:IntervalVariable _ "in" _ "(" int1:ConditionVariableInterval ".." int2:ConditionVariableInterval ")"
-    { return [val].concat(["in",["("].concat(int1).concat([".."].concat(int2).concat([")"]))]) }
+	= _ def:("not defined"/"not")? _ arg:("$" VariableName {return text().trim()}/StringSet) _ op:"at" _ int:(CondInteger / "(" _ c:CondInteger _ ")" { return ["(",c,")"]})
+    { return { prefix: def, left: arg, operator:op, right: int} }
+    / _ def:("not defined"/"not")? arg:IntervalVariable _ op:"in" _ int:("(" int1:ConditionVariableInterval op1:".." int2:ConditionVariableInterval ")" { return {left: int1, operator: op1, right: int2}} )
+    { return { prefix: def, left: arg, operator:op, right: int} }
 
 IntervalVariable
 	= not:"~"? type:[$#] VariableName { if(not && type === '$') error("syntax error"); else return text().trim() }  / StringSet 
@@ -86,10 +86,10 @@ ConditionVariableInterval
     }
 
 StringSet
-	= val:("any"/ "all" / "none" / Integer) _ of:"of" __ 
+	= val:("any"/ "all" / "none" / Integer) _ op:"of" __ 
     range:(a:"them" {return [a]} /"(" _ arg:("$*"/"$" name:VariableName wild:"*"? other:(_ "," _ "$" n:VariableName w:"*"? {let _w = (w != null) ? w : ""; return "$"+n+_w })*
     	{ let _wild = (wild != null) ? wild : ""; return ["$"+name+_wild].concat(other) }) _ ")"
-        { return ["(",arg,")"]} ) { return [val, of, range]}
+        { return arg} ) { return {left: val, operator: op, right: range} }
 
 //TODO Check that the variable used for accessing the data is referenced in 'ForInterval'
 For
@@ -215,9 +215,9 @@ String
 	= "\"" str:[^\"]* "\"" { return "\""+str.join('')+"\""}
     
 Integer "integer"
-  	=( _ ("(" _ (ConditionVariableNumeric/Integer/ [0-9]+) _ (_ NumericOperator _ Integer)* _ ")" _ 
-    / _ (ConditionVariableNumeric/[0-9]+) (_ NumericOperator _ Integer)* _ )) { return text().trim(); }
- 
+  	=( _ ("(" _ ("filesize"/ConditionVariableNumeric/Integer/ [0-9]+) _ (_ NumericOperator _ Integer)* _ ")" _ 
+    / _ ("filesize"/ConditionVariableNumeric/[0-9]+) (_ NumericOperator _ Integer)* _ )) { return text().trim(); }
+    
 CondInteger
 	= _ num:[0-9]+ dim:("KB"/"MB")? { if(dim) return [num.join(''), dim]; else return num.join('') }
   
@@ -260,7 +260,7 @@ VirtualAddress
 	= "0x"[0-9a-fA-F]+ { return text().trim() }
 
 ReModifier
-	= m:("nocase" / "ascii" / "wide" / "fullword" / "private")  {return {modifier: m, customAlphabet: null}} 
+	= ("nocase" / "ascii" / "wide" / "fullword" / "private")
 
 AllModifier
 	= m:("nocase" / "ascii" / "wide" / "fullword" / "xor" / "private") { return {modifier: m, customAlphabet: null}} 

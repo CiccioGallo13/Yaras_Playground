@@ -43,8 +43,8 @@ BooleanExpression
     { return ["(",b,")"].concat(b1) }
 
 BooleanExpression1
-	= _ b:(ConditionVariableOperation / For / BooleanExpression / InInterval / StringSet / ConditionVariable) _ b1:( _ log:("and"/"or") _ exp:ConditionExpression { return [log,exp]})*
-    { return b.concat(b1) }
+	= _ b:(ConditionVariableOperation / For / BooleanExpression / InInterval / StringSet / ConditionVariable) _ b1:( _ log:("and"/"or") _ exp:ConditionExpression { return [log, exp] })*
+    { return [b].concat(b1) }
 
 
     
@@ -62,16 +62,26 @@ ConditionVariableNumeric
 	= _ "~"? _ type:[#@!] name:VariableName sub:ArraySub? _ {if((type === '#') && sub) error("syntax error"); else return text().trim()}
 
 InInterval
-	= _ ("not defined"/"not")? _ (("$" VariableName/StringSet) _ "at" _ (CondInteger / "(" _ CondInteger _ ")")
-    / IntervalVariable _ "in" _ "(" ConditionVariableInterval ".." ConditionVariableInterval ")") { return text().trim() } 
+	= _ def:("not defined"/"not")? _ arg:("$" VariableName {return text().trim()}/StringSet) _ "at" _ int:(CondInteger / "(" _ c:CondInteger _ ")" { return ["(",c,")"]})
+    { let def1 = (def != null) ? [def ]: []; return def1.concat([arg,"at",int])}
+    / val:IntervalVariable _ "in" _ "(" int1:ConditionVariableInterval ".." int2:ConditionVariableInterval ")"
+    { return [val].concat(["in",["("].concat(int1).concat([".."].concat(int2).concat([")"]))]) }
 
 IntervalVariable
 	= not:"~"? type:[$#] VariableName { if(not && type === '$') error("syntax error"); else return text().trim() }  / StringSet 
 
 ConditionVariableInterval
-	= _ ("not defined"/"not")? _ "~"? _ ("(" _ ("not defined"/"not")? _ "~"? _ (ConditionVariableNumeric/CondInteger/"filesize"/ImportFunction) _ ")" /(ConditionVariableNumeric/[0-9]+/"filesize"/ImportFunction)) _ (NumericOperator _ 
-    "~"? _ (ConditionVariableNumeric / CondInteger /"filesize"/ImportFunction/"("ConditionVariableInterval+")"))?
-    ( NumericOperator _ "~"? _ (ConditionVariableNumeric / CondInteger / "filesize"/ImportFunction/ "("ConditionVariableInterval+")"))?
+	= _ def:("not defined"/"not")? _ tl:"~"? _ int1:(_ def1:("not defined"/"not")? _ tl1:"~"? 
+    _ c:("(" _ c1:(ConditionVariableNumeric/CondInteger/"filesize"/ImportFunction) _ ")" {return ["(",c1,")"]}/c1:(ConditionVariableNumeric/CondInteger/"filesize"/ImportFunction) {return [c1] })
+    { let _def1 = (def1 != null) ? def1 : []; let _tl1 = (tl1 != null) ? tl1 : []; return _def1.concat(_tl1).concat(c) })
+    _ int2:(op:NumericOperator _ tl2:"~"? _ int:(ConditionVariableNumeric / CondInteger /"filesize"/ImportFunction/"(" _ c:ConditionVariableInterval+ _ ")" {return ["(",c,")"]})
+    	{let _tl2 = (tl2 != null) ? tl2 : []; return [op].concat(_tl2).concat(int)})?
+    _ int3:(op:NumericOperator _ tl2:"~"? _ int:(ConditionVariableNumeric / CondInteger /"filesize"/ImportFunction/"(" _ c:ConditionVariableInterval+ _ ")" {return ["(",c,")"]})
+    	{let _tl2 = (tl2 != null) ? tl2 : []; return [op].concat(_tl2).concat(int)})?
+    { let _def = (def != null) ? def : []; let _tl = (tl != null) ? tl : [];
+      let _int2 = (int2 != null) ? int2 : []; let _int3 = (int3 != null) ? int3 : [];
+    	return _def.concat(_tl).concat(int1).concat(_int2).concat(_int3)
+    }
 
 StringSet
 	= ("any"/ "all" / "none" / Integer) _ "of" __ ("them"/"(" _ ("$*"/"$" VariableName "*"? (_ "," _ "$" VariableName "*"?)*) _ ")")
@@ -104,7 +114,7 @@ ForInterval
  = _ ("any"/"all"/"none"/Integer) _ VariableName _ ("," _ VariableName)* _ "in" _ "(" ConditionVariableInterval ".." ConditionVariableInterval ")" _ { return text().trim() }
 
 ArraySub
-	= "["[0-9]+"]"
+	= "["[0-9]+"]" {return text().trim() }
 
 NumericOperator
 	= _ ([\-\*\\%\+&^|]/"<<"/">>") _ { return text().trim() }
@@ -116,7 +126,7 @@ VariableBody
 	= HexString / TextString / Regex
 
 ImportFunction
-	= ("pe"/"cuckoo")"."VariableName
+	= ("pe"/"cuckoo")"."VariableName {return text().trim() }
 
 TextString
 	= "\"" str:(Escape / [^\"\\])* "\"" [ ]* mod:StringModifier? { return ["\""+str.join('')+"\"",mod]}
@@ -162,7 +172,7 @@ RegexOccurrenceInterval
 	= lb:[0-9]+","ub:[0-9]+ { if(parseInt(lb.join(''),10) > parseInt(ub.join(''),10)) error("invalid interval"); else return [lb.join(''),ub.join('')]}
 
 HexByte
-	= _ "~"?[?0-9ABCDEF][?0-9ABCDEF] { return text().trim() }
+	= _ "~"?[?0-9A-Fa-f][?0-9A-Fa-f] { return text().trim() }
     
 Jump
 	= _ "["_ val:( Interval256 / NumberLower256 / "-") _ "]" { return ["[",val,"]"] }
@@ -205,20 +215,29 @@ StringModifier
 	/ mod:"private" mod1:(__  m:AllModifier {return m} )* { return [mod].concat(mod1) }
 
 RegexModifier
-	= "nocase" (__ ReModifier)*
-    / "wide" (__ ReModifier)* / "ascii" (__ ReModifier)*
-    / "fullword" (__ ReModifier)*
-	/ "private" (__ ReModifier)*
+	= arg:("nocase" (__ r:ReModifier {return r})*
+    / "wide" (__ r:ReModifier {return r})* / "ascii" (__ r:ReModifier {return r})*
+    / "fullword" (__ r:ReModifier {return r})*
+	/ "private" (__ r:ReModifier {return r})*) { return [arg[0]].concat(arg[1]) }
 
 CustomAlphabet
 	= "(\"" alphabet:( Escape / HexChar / [a-zA-Z0-9!@#$%^&*\(\)\{\}\[\]\.\-,|] )+ "\")"
     { if(alphabet.length != 64) error("invalid alphabet size, it must be 64 bytes long"); else return "(\""+alphabet.join('')+"\")" }
 
 DataAccess
-	= "u"?"int" ("8"/"16"/"32") "be"? "(" _ (VirtualAddress/CondInteger/DataAccess)_ ")"
+	= u:"u"? i:"int" num:("8"/"16"/"32") be:"be"? "(" _ arg:(VirtualAddress/CondInteger/DataAccess)_ ")"
+    {
+    	let u1 = ""
+        let be1 = ""
+        if(u != null)
+        	u1 = u;
+        if(be != null)
+        	be1 = be;
+        return [u1+i+num+be1,["(",arg,")"]];
+    }
 
 VirtualAddress
-	= "0x"[0-9a-fA-F]+
+	= "0x"[0-9a-fA-F]+ { return text().trim() }
 
 ReModifier
 	= ("nocase" / "ascii" / "wide" / "fullword" / "private")
@@ -227,11 +246,11 @@ AllModifier
 	= ("nocase" / "ascii" / "wide" / "fullword" / "base64" / "base64wide" / "xor" / "private")
 
 ConditionOperatorNumeric
-	= "<<" / ">>" / "<=" / ">=" / "==" / "!=" 
-    /[\-\*\\%\+&^|<>]
+	= ("<<" / ">>" / "<=" / ">=" / "==" / "!=" 
+    /[\-\*\\%\+&^|<>]) {return text().trim() }
 
 ConditionOperatorStrings
-	= "i"? ("contains"/"startswith"/"endswith") / "iequals" / "matches"
+	= ("i"? ("contains"/"startswith"/"endswith") / "iequals" / "matches") { return text().trim() }
 
 Escape
 	= "\\\"" / "\\\\" / "\\t" / "\\n" / "\\xdd"

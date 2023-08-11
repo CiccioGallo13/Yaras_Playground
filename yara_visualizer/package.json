@@ -26,6 +26,7 @@
     "bootstrap": "^5.2.3",
     "dumbo-svelte": "^0.0.33",
     "fs": "^0.0.1-security",
+    "pegjs": "^0.10.0",
     "sveltestrap": "^5.10.0",
     "types": "^0.1.1"
   }

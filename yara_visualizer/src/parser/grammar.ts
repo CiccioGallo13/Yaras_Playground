@@ -1,17 +1,19 @@
-
-const GRAMMAR = `
 Rules
-	= (imp:Import* _ {return imp}) ( RuleType? Rule)+
+	= $1:(imp:Import* _ {return imp}) $2:( type:RuleType? r:Rule {return {ruleType: type, rule:r}})+ { return {imports: $1, rules: $2} }
+
+Comment
+	= "//" (![\n] .)* / "/*" (!"*/" .)* "*/"
 
 RuleType
-	= (p:"private" __ g:"global" __ { return [p,g] }  
-    / g:"global" __ p:"private" __ { return [p,g] }
-    / ("global"/"private") __) { return text().trim() }
+	= p:"private" __ g:"global" __ { return { global: true, private: true} }  
+    / g:"global" __ p:"private" __ { return { global: true, private: true} }
+    / v:("global"/"private") __ { let g = (v === 'global') ? true : false; let p = (v === 'private') ? true : false; return { global: g, private: p} }
     
 
 Rule
-  	= _ rule:"rule" RuleName tag:(":" RuleNameImport+)? body:("{" _ meta:("meta:"Meta)? _ str:("strings:"Strings)? _ cond:("condition:"Condition) _ "}" {return [meta, str, cond] }) _
-	{ return [rule, tag, body] }
+  	= _ "rule" name:RuleName tag:(":" r:RuleNameImport+ {return r;})? body:("{" _ meta:("meta:" m:Meta {return m})? _ str:("strings:" s:Strings {return s})? _ cond:("condition:" c:Condition {return c}) _ "}" 
+	{return { meta: meta, strings: str, condition: cond} }) _
+	{ return {name: name, tags: tag, body: body} }
 
 //TODO: Implment Anonymous strings
 
@@ -31,11 +33,11 @@ Strings
 	= Variable+ 
     
 Condition
-	= _ def:("not defined"/"not")? _ exp:(BooleanExpression / BooleanExpression1 )  _ 
+	= _ def:("not defined"/"not")? _ exp:(InInterval/StringSet/BooleanExpression / BooleanExpression1 )  _ 
     { if(def!=null) return [def,exp]; else return exp }
 
 ConditionExpression
-	=   def:("not defined"/"not")? _ exp:(ConditionVariableOperation / For / BooleanExpression1 / BooleanExpression / InInterval / StringSet / ConditionVariable)
+	=   def:("not defined"/"not")? _ exp:(InInterval/StringSet/ ConditionVariableOperation / For / BooleanExpression1 / BooleanExpression / ConditionVariable)
     { if(def!=null) return [def,exp]; else return exp }
     
 BooleanExpression
@@ -43,7 +45,7 @@ BooleanExpression
     { return ["(",b,")"].concat(b1) }
 
 BooleanExpression1
-	= _ b:(ConditionVariableOperation / For / BooleanExpression / InInterval / StringSet / ConditionVariable) _ b1:( _ log:("and"/"or") _ exp:ConditionExpression { return [log, exp] })*
+	= _ b:(InInterval/ StringSet / ConditionVariableOperation / For / BooleanExpression / ConditionVariable) _ b1:( _ log:("and"/"or") _ exp:ConditionExpression { return [log, exp] })*
     { return [b].concat(b1) }
 
 
@@ -84,34 +86,51 @@ ConditionVariableInterval
     }
 
 StringSet
-	= ("any"/ "all" / "none" / Integer) _ "of" __ ("them"/"(" _ ("$*"/"$" VariableName "*"? (_ "," _ "$" VariableName "*"?)*) _ ")")
+	= val:("any"/ "all" / "none" / Integer) _ of:"of" __ 
+    range:(a:"them" {return [a]} /"(" _ arg:("$*"/"$" name:VariableName wild:"*"? other:(_ "," _ "$" n:VariableName w:"*"? {let _w = (w != null) ? w : ""; return "$"+n+_w })*
+    	{ let _wild = (wild != null) ? wild : ""; return ["$"+name+_wild].concat(other) }) _ ")"
+        { return ["(",arg,")"]} ) { return [val, of, range]}
 
 //TODO Check that the variable used for accessing the data is referenced in 'ForInterval'
 For
-	= "for" __ ForInterval ":" _ "(" ForContext ")"
+	= "for" __ int:(StringSet/ForInterval) ":" _ "(" arg:ForContext ")"  { return ["for",int,":"].concat(["("].concat(arg).concat([")"]))}
     
 ForContext
-	= _  (BooleanForContext/BooleanForContext1) _ {return text().trim() }
+	= _  c:(BooleanForContext/BooleanForContext1/SpecialForVariable) _ {return c }
 
 ConditionExpressionFor
-	=   ("not defined"/"not")? _ (ForVariableOperation / BooleanForContext1 / BooleanForContext / InInterval / StringSet / ConditionVariable)
+	=   def:("not defined"/"not")? _ exp:(InIntervalFor / StringSet /ForVariableOperation / BooleanForContext1 / BooleanForContext / ConditionVariable)
+    	{ if(def!=null) return [def,exp]; else return exp }
 
 BooleanForContext
-	= "(" _ ConditionExpressionFor _ ")" _ ( _ ("and"/"or") _ ConditionExpressionFor)*
-
+	= "(" _ b:ConditionExpressionFor _ ")" _ b1:( _ log:("and"/"or") _ exp:ConditionExpressionFor { return [log,exp]})*
+	{ return ["(",b,")"].concat(b1) }
 BooleanForContext1
-	= _ (ForVariableOperation / BooleanForContext / InInterval / StringSet / ConditionVariable) _ ( _ ("and"/"or") _ ConditionExpressionFor)*
+	= _ b:(InIntervalFor / StringSet /ForVariableOperation / BooleanForContext / ConditionVariable) _ b1:( _ log:("and"/"or") _ exp:ConditionExpressionFor { return [log,exp]})*
+	{ return [b].concat(b1) }
+
+InIntervalFor
+	= _ def:("not defined"/"not")? _ arg:("$" VariableName {return text().trim()}/StringSet/SpecialForVariable) _ "at" _ int:(CondInteger / "(" _ c:CondInteger _ ")" { return ["(",c,")"]})
+    { let def1 = (def != null) ? [def ]: []; return def1.concat([arg,"at",int])}
+    / val:(IntervalVariable/SpecialForVariable) _ "in" _ "(" int1:(i1:ConditionVariableInterval ".." i2:ConditionVariableInterval {return [i1,"..",i2]}) ")"
+    { return [val].concat(["in",["("].concat(int1.concat([")"]))]) }
 
 ForVariableOperation
-	= _ ("filesize"/ForVariable/DataAccess/ImportFunction/ConditionVariableNumeric/VirtualAddress/CondInteger/String) _ ConditionOperatorNumeric _ 
-    ("filesize"/ForVariable/DataAccess/ImportFunction/ConditionVariableNumeric / VirtualAddress /CondInteger / String / "("ConditionVariableOperation+")") 
-    (_ ConditionOperatorNumeric _ ("filesize"/ForVariable/DataAccess/ImportFunction/ConditionVariableNumeric / VirtualAddress / CondInteger /String / "("ConditionVariableOperation+")"))?
-
+	= _ c1:("filesize"/ForVariable/DataAccess/ImportFunction/ConditionVariableNumeric/VirtualAddress/CondInteger/String/SpecialForVariable) _ op:ConditionOperatorNumeric _ 
+    c2:("filesize"/ForVariable/DataAccess/ImportFunction/ConditionVariableNumeric / VirtualAddress /CondInteger / String / "(" cv:ConditionVariableOperation+ ")" {return ["(",cv,")"]} / SpecialForVariable) 
+    c3:(_ op1:ConditionOperatorNumeric _ c:("filesize"/ForVariable/DataAccess/ImportFunction/ConditionVariableNumeric / VirtualAddress / CondInteger /String /SpecialForVariable / "(" cv:ConditionVariableOperation+")" {return ["(",cv,")"]}) {return op1+c})?
+    { if(c3!=null) return [c1,op,c2,c3]; else return [c1,op,c2] }
+    
 ForVariable
-	= [@!]? (VariableName ".")? VariableName ("[" _ (VariableName/[0-9]+) _ "]")? ("." VariableName)?
+	= ([@!]? (VariableName ".")? VariableName ("[" _ (VariableName/[0-9]+) _ "]")?/SpecialForVariable) ("." VariableName)?  {return text().trim()}
 
 ForInterval
- = _ ("any"/"all"/"none"/Integer) _ VariableName _ ("," _ VariableName)* _ "in" _ "(" ConditionVariableInterval ".." ConditionVariableInterval ")" _ { return text().trim() }
+ = _ val:("any"/"all"/"none"/Integer) _ name1:VariableName _ name2:("," _ v:VariableName {return v})* _ "in" _ 
+ "(" _ int1:(i1:ConditionVariableInterval ".." i2:ConditionVariableInterval {return [i1,"..",i2]} / 
+ 	     n1:Integer _ n2:("," _ _n:Integer {return _n;})* {return [n1].concat(n2)} /
+     	 n1:String _ n2:("," _ _n:String {return _n;})* {return [n1].concat(n2)} /
+         n1:("$" VariableName {return text().trim()}) _ n2:("," _ _n:("$" VariableName {return text().trim()}) {return _n;})* {return [n1].concat(n2)}) _ ")" _
+ 	{ return [val].concat([name1].concat(name2)).concat(["in",["("].concat(int1).concat([")"])]) }
 
 ArraySub
 	= "["[0-9]+"]" {return text().trim() }
@@ -120,41 +139,43 @@ NumericOperator
 	= _ ([\-\*\\%\+&^|]/"<<"/">>") _ { return text().trim() }
 
 Variable
-	= _ key:("$"VariableName) _ "=" _ val:VariableBody _n { return [key.join('')+" = ", val] }
-    
+	= _ key:("$"VariableName) _ "=" _ val:VariableBody _n { return { key: key.join(''), value: val} } 
+
 VariableBody
-	= HexString / TextString / Regex
+	= v:HexString {return { type: "hex", ...v}}/ v:TextString {return {type: "str", ...v}}/ v:Regex {return {type: "regex", ...v}}
 
 ImportFunction
 	= ("pe"/"cuckoo")"."VariableName {return text().trim() }
 
 TextString
-	= "\"" str:(Escape / [^\"\\])* "\"" [ ]* mod:StringModifier? { return ["\""+str.join('')+"\"",mod]}
+	= "\"" str:(Escape / [^\"\\])* "\"" [ ]* mod:StringModifier? { return { string: str.join(''), modifier:mod}}
 
 Regex
-	= reg:(("/^"/"/") RegularExpression ("/"/"$/")) tag:(t:("is"/"i"/"s")? {if(t!=null) return t; else return []}) [ ]* mod:RegexModifier?
-    { if(mod!=null) return reg.concat(tag).concat(mod); else return reg.concat(tag) }
+	= "/" reg:("^"? RegularExpression "$"? {return text()}) "/" tag:("is"/"i"/"s")? [ ]* mod:RegexModifier?
+    { 	let insensitive = (tag === 'i' || tag === 'is') ? true : false;
+    	let newLine = (tag === 's' || tag === 'is') ? true : false;
+        return { regex: reg, case_insensitive: insensitive, match_newLine: newLine, modifier: mod }
+    }
 
 HexString
 	= "{" _ arg:( q:(HexByte / Jump / OrHex) __ {return q})+ _ "}" [ ]* p:"private"?
-    { if(p) return ["{",arg,"}",p]; else return ["{",arg,"}"] }
+    { let _p = (p != null) ? true : false; return { args: arg, private: _p } }
 
+SpecialForVariable
+	= "@"/"#"/"$"
 
 RegularExpression
-	= (Grouping / Bracketed / RegexChar)+
+	= (Grouping / Bracketed / RegexChar)+ {return text()}
     
 Grouping
-	= "(" reg:RegularExpression+ ")" q:Quantifier? { if(q!=null) return ["("].concat(reg).concat([")"]).concat(q); else return ["("].concat(reg).concat([")"]) }
+	= "(" reg:RegularExpression+ ")" q:Quantifier? { return text() }
     
 Bracketed
 	= "["r1:(RegexChar "^" RegexChar / "^" RegexChar)? r2:RegularExpression* "]" q:(q1:Quantifier? {if(q1 != null) return q1; else return []})
     { if(r1 != null || r2.length > 0)
-    	if(r1 != null)
-        	return ["["].concat(r1).concat(r2).concat("]").concat(q);
-        else
-    		return ["["].concat(r2).concat("]").concat(q);
-        else 
-        	error("invalid regex interval") 
+    	return text();
+       else 
+        error("invalid regex interval") 
     }
 
 RegexChar
@@ -175,20 +196,20 @@ HexByte
 	= _ "~"?[?0-9A-Fa-f][?0-9A-Fa-f] { return text().trim() }
     
 Jump
-	= _ "["_ val:( Interval256 / NumberLower256 / "-") _ "]" { return ["[",val,"]"] }
+	= _ "["_ val:( Interval256 / NumberLower256 / "-") _ "]" { return "["+val+"]" }
     
 Interval256
 	= lb:NumberLower256 "-" ub:NumberLower256?
-    { if( ub && parseInt(lb,10) > parseInt(ub,10)) error("invalid interval"); else return text() }
-    
+    { if( ub && parseInt(lb,10) > parseInt(ub,10)) error("invalid interval"); else return text().trim() }    
+
 OrHex
-	= _ "("_ l:( l1:OrHex l2:( __ o:OrHex {return o })* {return [l1].concat(l2)}) _ "|"
-    _ r:( r1:OrHex r2:( __ o:OrHex {return o })* {return [r1].concat(r2)}) _ ")" {return ["(",l,"|",r,")"]}
-    / h:HexByte { return h }
+	= _ "("_ l:( l1:OrHex l2:( __ o:OrHex {return o })* {return [l1].concat(l2)}) r:(_ "|"
+    _ _r:( r1:OrHex r2:( __ o:OrHex {return o })* {return [r1].concat(r2)}) {return _r} )+ _ ")" {return {left: l, right: r} }
+    / Jump/ h:HexByte { return h }
    
 
 KeyValuePair
-	= key:[a-zA-Z0-9]+ _ "=" _ val:(Integer / String / "true" / "false") _ { return key.join('')+" = "+val }
+	= key:[a-zA-Z0-9_]+ _ "=" _ val:(Integer / String / "true" / "false") _ { return key.join('')+" = "+val }
     
 String
 	= "\"" str:[^\"]* "\"" { return "\""+str.join('')+"\""}
@@ -209,8 +230,7 @@ StringModifier
 	= mod:"nocase" mod1:(__ !("xor")!("base64")!("base64wide") m:AllModifier {return m} )* { return [mod].concat(mod1) } 
     / mod:"wide" mod1:(__ m:AllModifier {return m} )* { return [mod].concat(mod1) } / mod:"ascii" mod1:(__  m:AllModifier {return m} )* { return [mod].concat(mod1) }
     / mod:"xor" mod1:(__ !("nocase")!("base64")!("base64wide") m:AllModifier {return m} )* { return [mod].concat(mod1) }
-    / mod:"base64" al:CustomAlphabet? mod1:(__ !("xor")!("nocase")!("fullword") m:AllModifier {return m} )* { return [mod, [al]].concat(mod1) }
-    / mod:"base64wide" al:CustomAlphabet? mod1:(__ !("xor")!("nocase")!("fullword") m:AllModifier {return m} )* { return [mod, [al]].concat(mod1) }
+    / mod:Base64Mod mod1:(__ !("xor")!("nocase")!("fullword") m:AllModifier {return m} )* { return [mod].concat(mod1) }
     / mod:"fullword" mod1:(__ !("base64")!("base64wide") m:AllModifier {return m} )* { return [mod].concat(mod1) }
 	/ mod:"private" mod1:(__  m:AllModifier {return m} )* { return [mod].concat(mod1) }
 
@@ -221,7 +241,7 @@ RegexModifier
 	/ "private" (__ r:ReModifier {return r})*) { return [arg[0]].concat(arg[1]) }
 
 CustomAlphabet
-	= "(\"" alphabet:( Escape / HexChar / [a-zA-Z0-9!@#$%^&*\(\)\{\}\[\]\.\-,|] )+ "\")"
+	= "(\"" alphabet:( Escape / HexChar / [a-zA-Z0-9!@#$%\^&\*\(\)\{\}\[\]\.\-,|] )+ "\")"
     { if(alphabet.length != 64) error("invalid alphabet size, it must be 64 bytes long"); else return "(\""+alphabet.join('')+"\")" }
 
 DataAccess
@@ -240,10 +260,13 @@ VirtualAddress
 	= "0x"[0-9a-fA-F]+ { return text().trim() }
 
 ReModifier
-	= ("nocase" / "ascii" / "wide" / "fullword" / "private")
+	= m:("nocase" / "ascii" / "wide" / "fullword" / "private")  {return {modifier: m, customAlphabet: null}} 
 
 AllModifier
-	= ("nocase" / "ascii" / "wide" / "fullword" / "base64" / "base64wide" / "xor" / "private")
+	= m:("nocase" / "ascii" / "wide" / "fullword" / "xor" / "private") { return {modifier: m, customAlphabet: null}} 
+
+Base64Mod
+	= mod:("base64wide"/"base64") al:CustomAlphabet? { return {modifier: mod, customAlphabet: al}} 
 
 ConditionOperatorNumeric
 	= ("<<" / ">>" / "<=" / ">=" / "==" / "!=" 
@@ -262,11 +285,10 @@ HexChar
 	= ("\\x"[0-9a-fA-F].{2}) { return text().trim()}
 
 _ "whitespace"
-  = [ \t\n\r]*
+  = [ \t\n\r]* Comment?
   
 __ "atLeastOneWhitespace"
-	= [ ]+
+	= [ ]+ Comment?
     
 _n "newline"
-	= ([ ]*[\n]+[ ]*)+
-`
+	= ([ ]*[\n]+[ ]*)+ Comment?

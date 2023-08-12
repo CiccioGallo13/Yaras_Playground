@@ -85,8 +85,8 @@
     }
 
     $: {
-        const data = get(dataTextArea);
-        const rules = get(rulesTextArea);
+        const data = $dataTextArea;
+        const rules = $rulesTextArea;
         if (typeof window !== 'undefined') {
             updateUrlHash(data, rules);
         }

@@ -60,3 +60,8 @@ export interface State {
     rules: string;
     data: string;
 }
+
+export interface TabItem {
+    name: string;
+    icon: string;
+}

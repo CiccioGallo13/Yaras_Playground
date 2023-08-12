@@ -1,6 +1,7 @@
 <script lang="ts">
     import { theme } from './../lib/stores'
-    import { Button, ButtonGroup, NavItem, Navbar, NavbarBrand } from 'sveltestrap';
+    import { Button, ButtonGroup, NavItem, Navbar, NavbarBrand, Row } from 'sveltestrap';
+    import { goto } from '$app/navigation';
 
 </script>
   
@@ -9,9 +10,16 @@
     $theme}/> <link rel="stylesheet" href={`/theme/${$theme}.css`} />
 </svelte:head>
 
-
 <Navbar style="background-color: hsl(0deg, 0%, 30%);" expand="md">
-    <p id="title">YARA VISUALIZER</p>
+    <div class="left-group">
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
+        <p id="title" on:click={() => {goto("/")}} >YARA VISUALIZER</p>
+        
+        <div class="vl"></div>
+        <NavbarBrand style="color: white; margin-left: 20px;" href="/editor"> Rule Editor </NavbarBrand>
+        
+    </div>
+    
     <NavItem style="color: var(--color-lightest)">
         <ButtonGroup>
             <Button active={$theme == 'light'} on:click={() => {theme.set('light')}}
@@ -30,8 +38,20 @@
     p {
         font-size: 23px;
         font-weight: bold;
+        cursor: pointer;
         margin: 0 0 0 30px;
         padding: 0;
         color: white;
+    }
+
+    .left-group {
+        display: flex;
+        align-items: center;
+    }
+
+    .vl {
+        border-left: 1px solid white;
+        height: 30px;
+        margin-left: 20px;
     }
 </style>

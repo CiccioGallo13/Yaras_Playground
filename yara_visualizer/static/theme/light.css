@@ -7,4 +7,5 @@
     --color-stronger: hsl(0deg, 0%, 20%);
     --color-strongest: hsl(0deg, 0%, 0%);
     --color-text-area: hsl(0deg, 0%, 95%);
+    --color-active: hsl(288, 78%, 58%);
   }

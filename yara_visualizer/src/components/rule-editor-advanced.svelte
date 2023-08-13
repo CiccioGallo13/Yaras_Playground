@@ -1,21 +1,24 @@
 <script lang="ts">
 import { onMount } from 'svelte';
+import { rulesTextArea } from '$lib/stores';
+import { get } from 'svelte/store';
+import { parse } from '../parser/parser';
 
 let textAreaElement;
+let errorMessage: string = '';
 
 onMount(async () => {
     textAreaElement = document.querySelector('textarea')!
     });
 
-let textArea: string = '';
-let cursorPosition: number | null = null;
 
 function handleKeyDown(event: KeyboardEvent) {
+
     if (event.key === 'Tab') {
       const start = textAreaElement!.selectionStart;
       const end = textAreaElement!.selectionEnd;
 
-      textArea = textArea.substring(0, start) + '\t' + textArea.substring(end);
+      $rulesTextArea = get(rulesTextArea).substring(0, start) + '\t' + get(rulesTextArea).substring(end);
 
       setTimeout(() => {
         textAreaElement!.selectionStart = start + 1;
@@ -24,6 +27,11 @@ function handleKeyDown(event: KeyboardEvent) {
 
       event.preventDefault();
     }
+
+  }
+
+  function parseRules() {
+    errorMessage = parse(get(rulesTextArea));
   }
 
 
@@ -32,14 +40,39 @@ function handleKeyDown(event: KeyboardEvent) {
 
 <div class="text-editor">
     <div class="line-numbers">
-        {#each textArea.split('\n') as _, index}
+        {#each $rulesTextArea.split('\n') as _, index}
             <span>{index + 1}</span>
         {/each}
     </div>
-    <textarea bind:value={textArea} on:keydown={handleKeyDown}></textarea>
+    <textarea class="editor" bind:value={$rulesTextArea} on:keydown={handleKeyDown} on:input={parseRules}></textarea>
 </div>
+{#if errorMessage !== ''}
+  {#if errorMessage === 'Rule parsed successfully'}
+    <div class="message-info-ok">{errorMessage}</div>
+  {:else}
+    <div class="message-info-error">{errorMessage}</div>
+  {/if}
+{/if}
 
 <style>
+.message-info-ok {
+  display: block;
+  background-color: rgb(49, 157, 49);
+  font-size: 15px;
+  font-weight: 500;
+  margin-top: 5px;
+  padding: 7px 20px 7px 20px;
+}
+
+.message-info-error {
+  display: block;
+  background-color: rgb(221, 75, 75);
+  font-size: 15px;
+  font-weight: 500;
+  margin-top: 5px;
+  padding: 7px 20px 7px 20px;
+}
+
 .text-editor {
   display: flex;
   gap: 10px;
@@ -50,14 +83,14 @@ function handleKeyDown(event: KeyboardEvent) {
   padding: 20px 10px;
 }
 
-textarea {
+.editor {
   line-height: 21px;
   overflow-y: hidden;
   padding: 0;
   border: 0;
   background: #282a3a;
   color: #FFF;
-  min-width: 500px;
+  width: 90vw;
   height: 65vh;
   outline: none;
   resize: none;

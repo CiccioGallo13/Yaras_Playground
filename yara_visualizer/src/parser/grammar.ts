@@ -146,7 +146,7 @@ NumericOperator
 = _ ([\\-\\*\\\\%\\+&^|]/"<<"/">>") _ { return text().trim() }
 
 Variable
-= _ key:("$"VariableName) _ "=" _ val:VariableBody _n { return { key: key.join(''), value: val} } 
+= _ key:("$"VariableName) _ op:"=" _ val:VariableBody _n { return { left: key.join(''), operator: op, right: val} } 
 
 VariableBody
 = v:HexString {return { type: "hex", ...v}}/ v:TextString {return {type: "str", ...v}}/ v:Regex {return {type: "regex", ...v}}
@@ -216,7 +216,7 @@ OrHex
    
 
 KeyValuePair
-= key:[a-zA-Z0-9_]+ _ "=" _ val:(Integer / String / "true" / "false") _ { return key.join('')+" = "+val }
+= key:[a-zA-Z0-9_]+ _ op:"=" _ val:(Integer / String / "true" / "false") _ { return { left:key.join(''), operator:op, right:val }}
     
 String
 = "\\"" str:[^\\"]* "\\"" { return "\\""+str.join('')+"\\""}

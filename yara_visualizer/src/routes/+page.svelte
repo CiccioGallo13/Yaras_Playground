@@ -239,11 +239,6 @@
         align-items: center;
     }
 
-    body {
-    background-color: var(--color-verylight);
-    color: var(--color-strongest);
-    }
-
     .spinner-load {
         display: flex;
         justify-content: center;

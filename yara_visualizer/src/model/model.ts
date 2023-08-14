@@ -65,3 +65,9 @@ export interface TabItem {
     name: string;
     icon: string;
 }
+
+export interface GenericOperation {
+    left: string;
+    right: string;
+    operator: string;
+}

@@ -1,14 +1,36 @@
 <script lang="ts">
 import type { GenericOperation } from "../model/model";
-    import { Styles, Input } from "sveltestrap";
+    import { Styles, Input, Button } from "sveltestrap";
+    import { copyText } from "svelte-copy";
 
-    let ruleName = "rule_name";
+    let ruleName: string = "rule_name";
     let meta: GenericOperation[] = [];
     let strings: GenericOperation[] = [];
     let condition: string[] = [""];
     let condtionOperator: string[] = [];
     const openCurly = "{";
     const closeCurly = "}";
+
+    function getStringRule() {
+        let rule = "";
+        rule += "rule "+ ruleName + ":\n{";
+        rule += "    meta:\n";
+        for (let _meta of meta) {
+            rule += "        " + _meta.left + " " + _meta.operator + " " + _meta.right + "\n";
+        }
+        rule += "    strings:\n";
+        for (let _string of strings) {
+            rule += "        " +"$"+_string.left + " " + _string.operator + " " + _string.right + "\n";
+        }
+        rule += "    condition:\n";
+        for (let i = 0; i < condition.length-1; i++) {
+            rule += "        " +condition[i] + " " + condtionOperator[i] + "\n";
+        }
+        rule += "        " + condition[condition.length-1] + "\n}";
+        console.log(rule)
+        return rule;
+    }
+
 </script>
 
 <Styles />
@@ -33,9 +55,10 @@ import type { GenericOperation } from "../model/model";
                 <div class="meta-value">
                     <input type="text" bind:value={_meta.right} />
                 </div>
+                <Button on:click={() => {}}> remove</Button>
             </div>
         {/each}
-        <button on:click={() => {meta = [...meta, {left: "", operator: "=", right: ""}]}}>Add Meta</button>
+        <Button on:click={() => {meta = [...meta, {left: "", operator: "=", right: ""}]}}>Add Meta</Button>
     </div>
 
     <div class="block">
@@ -53,7 +76,7 @@ import type { GenericOperation } from "../model/model";
                 </div>
             </div>
         {/each}
-        <button on:click={() => {strings = [...strings, {left: "", operator: "=", right: ""}]}}>Add String</button>
+        <Button on:click={() => {strings = [...strings, {left: "", operator: "=", right: ""}]}}>Add String</Button>
     </div>
 
     <div class="block">
@@ -70,13 +93,14 @@ import type { GenericOperation } from "../model/model";
 
                 <Input type="select" style="margin:0 20px;" bind:value={_} >
                     {#each strings as string}
-                    <option> {string.left}</option>  
+                    <option> {"$"+string.left} </option>  
                     {/each}
                 </Input>
             {/each}
 
         </div>
-        <button on:click={() => {condition = [...condition, ""]; condtionOperator=[...condtionOperator, ""]}}>Add Condition</button>
+        <Button on:click={() => {condition = [...condition, ""]; condtionOperator=[...condtionOperator, ""]}}>Add Condition</Button>
+
     </div>
 
 
@@ -84,6 +108,7 @@ import type { GenericOperation } from "../model/model";
     <div>{closeCurly}</div>
 
 </div>
+<Button on:click={() => {copyText(getStringRule())}}>Copy rule</Button>
 
 <style>
     .instance {
@@ -111,3 +136,4 @@ import type { GenericOperation } from "../model/model";
         margin: 20px;
     }
 </style>
+

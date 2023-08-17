@@ -1,12 +1,17 @@
 <script lang="ts">
 import type { GenericOperation } from "../model/model";
-    import { Styles, Input, Button, Alert, Icon } from "sveltestrap";
+    import { Styles, Input, Button, Alert, Icon, Toast, ToastHeader, ToastBody } from "sveltestrap";
     import { copyText } from "svelte-copy";
+    import { metaInfo } from "./constants";
     import type { Color } from "sveltestrap/src/shared";
 
     let alertColor: Color = "success";
     let alertMessage: string = "Copied to clipboard";
     let alertOpen: boolean = false;
+    let toastOpen: boolean = false;
+    let toastHeader: string = "";
+    let toastBody: string = "";
+
 
     let ruleName: string = "rule_name";
     let meta: GenericOperation[] = [];
@@ -15,6 +20,10 @@ import type { GenericOperation } from "../model/model";
     let condtionOperator: string[] = [];
     const openCurly = "{";
     const closeCurly = "}";
+
+    function toggle() {
+        toastOpen = !toastOpen;
+    }
 
     function removeElement<T>(whichArray: string, indexToRemove: number) {
         switch(whichArray) {
@@ -98,6 +107,19 @@ import type { GenericOperation } from "../model/model";
 
 <Styles />
 
+{#if toastOpen}
+<div class="overlay">
+    <Toast isOpen={toastOpen} style="position: relative; background-color: gray; ">
+        <ToastHeader toggle={toggle}>
+            {toastHeader}
+        </ToastHeader>
+        <ToastBody>
+            {toastBody}
+        </ToastBody>
+    </Toast>
+</div>
+{/if}
+
 <div class="rule">
     <div class="rule-name">
         rule <input type="text" bind:value={ruleName} />
@@ -106,7 +128,8 @@ import type { GenericOperation } from "../model/model";
 
 
     <div class="block">
-        meta:
+            meta:<Button color="warning" on:click={() => {toastHeader = "Metadata"; toastBody = metaInfo; toggle()}}
+            style="width:25px; height:25px; border-radius: 20px; display:inline-flex; align-items: center; justify-content: center; font-weight:500; margin-left:50px;">i</Button>
         {#each meta as _meta, i}
             <div class="instance">
                 <div class="meta-name">
@@ -122,14 +145,14 @@ import type { GenericOperation } from "../model/model";
                 on:click={() => {removeElement('meta', i)}}>remove</Button>
             </div>
         {/each}
-        <Button on:click={() => {meta = [...meta, {left: "", operator: "=", right: ""}]}}
-            style="color: var(--color-lightest); background-color: var(--color-strongest)">
-            <Icon name="plus-lg" />
-            Add Meta</Button>
     </div>
+    <Button on:click={() => {meta = [...meta, {left: "", operator: "=", right: ""}]}}
+        style="color: var(--color-lightest); background-color: var(--color-strongest); margin-left:40px;">
+        <Icon name="plus-lg" />
+        Add Meta</Button>
 
     <div class="block">
-        strings:
+        strings:<Button color="warning" style="width:25px; height:25px; border-radius: 20px; display:inline-flex; align-items: center; justify-content: center; font-weight:500; margin-left:40px;">i</Button>
         {#each strings as _string, i}
             <div class="instance">
                 <div class="string-name">
@@ -145,14 +168,14 @@ import type { GenericOperation } from "../model/model";
                 on:click={() => {removeElement('strings', i)}}>remove</Button>
             </div>
         {/each}
-        <Button on:click={() => {strings = [...strings, {left: "", operator: "=", right: ""}]}}
-            style="color: var(--color-lightest); background-color: var(--color-strongest)">
-            <Icon name="plus-lg" />
-            Add String</Button>
     </div>
+    <Button on:click={() => {strings = [...strings, {left: "", operator: "=", right: ""}]}}
+        style="color: var(--color-lightest); background-color: var(--color-strongest); margin-left:40px;">
+        <Icon name="plus-lg" />
+        Add String</Button>
 
     <div class="block">
-        condition:
+        condition:<Button color="warning" style="width:25px; height:25px; border-radius: 20px; display:inline-flex; align-items: center; justify-content: center; font-weight:500; margin-left:20px;">i</Button>
         <div class="condition">
             {#each condition as _ , i}
             {#if i > 0}
@@ -206,6 +229,17 @@ import type { GenericOperation } from "../model/model";
 
 
 <style>
+
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
     .instance {
         display: flex;
         flex-direction: row;
@@ -221,7 +255,7 @@ import type { GenericOperation } from "../model/model";
     }
 
     .block {
-        margin: 20px;
+        margin: 10px 0px 10px 20px;
     }
 
     .condition {

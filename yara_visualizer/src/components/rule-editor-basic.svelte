@@ -114,7 +114,11 @@ import type { GenericOperation } from "../model/model";
             {toastHeader}
         </ToastHeader>
         <ToastBody>
-            {toastBody}
+            {toastBody.split("<code>")[0]}
+            <pre>
+                { toastBody.split("<code>")[1].split("</code>")[0]}
+            </pre>
+            { toastBody.split("</code>")[1]}
         </ToastBody>
     </Toast>
 </div>

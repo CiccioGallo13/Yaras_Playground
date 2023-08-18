@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import exp from 'constants';
 
 
 test.beforeEach(async ({page})=> {
@@ -14,9 +15,17 @@ test('dataTextAreaInput', async ({ page }) => {
     await expect(page.locator('#dataTextArea')).toHaveValue('data');
   });
   
-  test('rulesTextAreaInput', async ({ page }) => {
-    await page.locator('#rulesTextArea').click();
-    await page.locator('#rulesTextArea').fill('rules');
-  
-    await expect(page.locator('#rulesTextArea')).toHaveValue('rules');
-  });
+test('rulesTextAreaInput', async ({ page }) => {
+  await page.locator('#rulesTextArea').click();
+  await page.locator('#rulesTextArea').fill('rules');
+
+  await expect(page.locator('#rulesTextArea')).toHaveValue('rules');
+});
+
+test('check-rule-editor-binding', async ({ page }) => {
+await page.locator('#rulesTextArea').click();
+await page.locator('#rulesTextArea').fill('example');
+await page.getByRole('link', { name: 'Rule Editor' }).click();
+await page.getByText('Advanced').click();
+await expect(page.getByRole('textbox')).toHaveValue('example');
+});

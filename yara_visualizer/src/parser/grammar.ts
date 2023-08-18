@@ -18,7 +18,7 @@ Rule
 = _ "rule" name:RuleName tag:(":" r:RuleNameImport+ {return r;})? body:("{" _ meta:("meta:" m:Meta {return m})? _ str:("strings:" s:Strings {return s})? _ cond:("condition:" c:Condition {return c}) _ "}" 
 	{return { meta: meta, strings: str, condition: cond} }) _
 	{ 
-        if(condVar.indexOf("*") === -1)
+        if(condVar.indexOf("*") === -1 && condVar.indexOf("them") === -1)
         {
             for(let i = 0; i < stringsVar.length; i++)
             {
@@ -111,7 +111,7 @@ ConditionVariableInterval
 
 StringSet
 = val:("any"/ "all" / "none" / Integer) _ op:"of" __ 
-    range:(a:"them" {return [a]} /"(" _ arg:("$*"/"$" name:VariableName wild:"*"? other:(_ "," _ "$" n:VariableName w:"*"? {let _w = (w != null) ? w : ""; condVar.push(n+_w); return "$"+n+_w })*
+    range:(a:"them" {condVar.push(a); return [a]} /"(" _ arg:("$*"/"$" name:VariableName wild:"*"? other:(_ "," _ "$" n:VariableName w:"*"? {let _w = (w != null) ? w : ""; condVar.push(n+_w); return "$"+n+_w })*
     	{ let _wild = (wild != null) ? wild : ""; condVar.push(name+_wild); return ["$"+name+_wild].concat(other) }) _ ")"
         { if(arg === "$*") condVar.push("*"); return arg} ) { return {left: val, operator: op, right: range} }
 
@@ -120,7 +120,7 @@ For
 = op:"for" __ int:(StringSet/ForInterval) _ ":" _ "(" arg:ForContext ")"  { return { left: int, operator: op, right: arg} }
     
 ForContext
-= _  def:("not defined"/"not")? _ exp:(BooleanForContext/BooleanForContext1/SpecialForVariable) _ { return { prefix: def, expression: exp} }
+= _  def:("not defined"/"not")? _ exp:(ForVariableOperation/BooleanForContext/BooleanForContext1/SpecialForVariable) _ { return { prefix: def, expression: exp} }
 
 ConditionExpressionFor
 =   def:("not defined"/"not")? _ exp:(InIntervalFor / StringSet /ForVariableOperation / BooleanForContext1 / BooleanForContext / ConditionVariable)
@@ -142,8 +142,8 @@ InIntervalFor
     { return {prefix: def, left: arg, operator:op, right: int1} }
 
 ForVariableOperation
-= _ lb:"("? _ c1:(ForVariable/DataAccess/ImportFunction/ConditionVariableNumeric/VirtualAddress/CondInteger/String/Integer/SpecialForVariable) _ rb:")"? _ op:ConditionOperatorNumeric _ 
-     c2:("(" _ c:(ForVariable/DataAccess/ImportFunction/ConditionVariableNumeric / VirtualAddress /CondInteger / String / Integer/ SpecialForVariable) _ ")" {return c}/(ForVariable/DataAccess/ImportFunction/ConditionVariableNumeric / VirtualAddress /CondInteger / String / Integer/ SpecialForVariable))
+= _ lb:"("? _ c1:(DataAccess/ImportFunction/IntegerFor/ConditionVariableNumeric/VirtualAddress/CondInteger/String/SpecialForVariable) _ rb:")"? _ op:ConditionOperatorNumeric _ 
+     c2:("(" _ c:(DataAccess/ImportFunction/IntegerFor/ConditionVariableNumeric / VirtualAddress /CondInteger / String / SpecialForVariable) _ ")" {return c}/(ForVariable/DataAccess/ImportFunction/ConditionVariableNumeric / VirtualAddress /CondInteger / String / Integer/ SpecialForVariable))
 	{ if((lb != null && rb != null) || (lb == null && rb == null) )
     	return {left: c1, operator: op, right: c2};
       else
@@ -272,6 +272,10 @@ String
 Integer "integer"
 =( _ ("(" _ ("filesize"/ConditionVariableNumeric/Integer/ [0-9]+) _ (_ NumericOperator _ Integer)* _ ")" _ 
     / _ ("filesize"/ConditionVariableNumeric/[0-9]+) (_ NumericOperator _ Integer)* _ )) { return text().trim(); }
+
+IntegerFor "integerFor"
+=( _ ("(" _ ("filesize"/ForVariable/Integer/ [0-9]+) _ (_ NumericOperator _ Integer)* _ ")" _ 
+    / _ ("filesize"/ForVariable/[0-9]+) (_ NumericOperator _ Integer)* _ )) { return text().trim(); }
     
 CondInteger
 = _ num:[0-9]+ dim:("KB"/"MB")? { if(dim) return [num.join(''), dim]; else return num.join('') }

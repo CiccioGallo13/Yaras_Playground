@@ -1,5 +1,7 @@
 
 export const grammar = `
+{var stringsVar = []; var condVar = [];}
+
 Rules
 = $1:(imp:Import* _ {return imp}) $2:( type:RuleType? r:Rule {return {ruleType: type, rule:r}})+ { return {imports: $1, rules: $2} }
 
@@ -15,12 +17,32 @@ RuleType
 Rule
 = _ "rule" name:RuleName tag:(":" r:RuleNameImport+ {return r;})? body:("{" _ meta:("meta:" m:Meta {return m})? _ str:("strings:" s:Strings {return s})? _ cond:("condition:" c:Condition {return c}) _ "}" 
 	{return { meta: meta, strings: str, condition: cond} }) _
-	{ return {name: name, tags: tag, body: body} }
+	{ 
+        if(condVar.indexOf("*") === -1)
+        {
+            for(let i = 0; i < stringsVar.length; i++)
+            {
+                let found = false;
+                for(let j = 0; j < condVar.length; j++)
+                {
+                    const regexPattern = condVar[j].replace(/\\*/g, '.*');
+                    if(stringsVar[i].match(regexPattern) != null)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+                if(!found)
+                    error("Variable $"+stringsVar[i]+" not referenced in condition");
+            }
+        }
+        return {name: name, tags: tag, body: body}
+    }
 
 //TODO: Implment Anonymous strings
 
 Import
-=  _ i:"import" _ name:("\\"" VariableName "\\"") _n { return i+" "+name.join('') }
+=  _ i:"import" _ name:("\\"" ([_a-zA-Z][_\\-$a-zA-Z0-9]*) "\\"") _n { return i+" "+name.join('') }
 
 RuleName
 = __ [_a-zA-Z][_\\-a-zA-Z0-9$]* _ { return text().trim() }
@@ -55,7 +77,7 @@ BooleanExpression1
     
 ConditionVariable
 =("not defined"/"not")? _ not:"~"? _ type:[#$@!] name:VariableName sub:ArraySub? 
-    { if(((type === '#' || type === '$') && sub) || (type === '$' && not)) error("syntax error"); else return text().trim() }
+    { if(((type === '#' || type === '$') && sub) || (type === '$' && not)) error("syntax error"); else return {variable:text().trim(), var_name: name} }
 
 ConditionVariableOperation
 = _ lb:"("? c1:(DataAccess/ImportFunction/ConditionVariableNumeric/VirtualAddress/CondInteger/Integer) rb:")"? _ op:ConditionOperatorNumeric _ 
@@ -63,7 +85,7 @@ ConditionVariableOperation
     { if((lb != null && rb != null) || (lb == null && rb == null) )return {left: c1, operator: op, right: c2}; else error("syntax error") }
     
 ConditionVariableNumeric
-= _ "~"? _ type:[#@!] name:VariableName sub:ArraySub? _ {if((type === '#') && sub) error("syntax error"); else return text().trim()}
+= _ "~"? _ type:[#@!] name:VariableName sub:ArraySub? _ {if((type === '#') && sub) error("syntax error"); else return {variable:text().trim(), var_name: name}}
 
 InInterval
 = _ def:("not defined"/"not")? _ arg:("$" VariableName {return text().trim()}/StringSet) _ op:"at" _ int:(CondInteger / "(" _ c:CondInteger _ ")" { return ["(",c,")"]})
@@ -89,9 +111,9 @@ ConditionVariableInterval
 
 StringSet
 = val:("any"/ "all" / "none" / Integer) _ op:"of" __ 
-    range:(a:"them" {return [a]} /"(" _ arg:("$*"/"$" name:VariableName wild:"*"? other:(_ "," _ "$" n:VariableName w:"*"? {let _w = (w != null) ? w : ""; return "$"+n+_w })*
-    	{ let _wild = (wild != null) ? wild : ""; return ["$"+name+_wild].concat(other) }) _ ")"
-        { return arg} ) { return {left: val, operator: op, right: range} }
+    range:(a:"them" {return [a]} /"(" _ arg:("$*"/"$" name:VariableName wild:"*"? other:(_ "," _ "$" n:VariableName w:"*"? {let _w = (w != null) ? w : ""; condVar.push(n+_w); return "$"+n+_w })*
+    	{ let _wild = (wild != null) ? wild : ""; condVar.push(name+_wild); return ["$"+name+_wild].concat(other) }) _ ")"
+        { if(arg === "$*") condVar.push("*"); return arg} ) { return {left: val, operator: op, right: range} }
 
 //TODO Check that the variable used for accessing the data is referenced in 'ForInterval'
 For
@@ -146,7 +168,7 @@ NumericOperator
 = _ ([\\-\\*\\\\%\\+&^|]/"<<"/">>") _ { return text().trim() }
 
 Variable
-= _ key:("$"VariableName) _ op:"=" _ val:VariableBody _n { return { left: key.join(''), operator: op, right: val} } 
+= _ key:("$"VariableNameStrings) _ op:"=" _ val:VariableBody _n { return { left: key.join(''), operator: op, right: val} } 
 
 VariableBody
 = v:HexString {return { type: "hex", ...v}}/ v:TextString {return {type: "str", ...v}}/ v:Regex {return {type: "regex", ...v}}
@@ -155,11 +177,37 @@ ImportFunction
 = ("pe"/"cuckoo")"."VariableName {return text().trim() }
 
 TextString
-= "\\"" str:(Escape / [^\\\\\\"])* "\\"" [ ]* mod:StringModifier? { return { string: str.join(''), modifier:mod}}
+= "\\"" str:(Escape / [^\\\\\\"])* "\\"" [ ]* mod:StringModifier? 
+{
+    let _mod = []; 
+    if(mod != null)
+    {
+        for(let i = 0; i < mod.length; i++)
+            _mod.push(mod[i].modifier);
+
+        //check if there are duplicate modifiers
+        let _mod1 = _mod.slice();
+        _mod1.sort();
+        for(let i = 0; i < _mod1.length - 1; i++)
+            if(_mod1[i + 1] === _mod1[i])
+                error("duplicate modifier");
+        
+    }
+    return { string: str.join(''), modifier:mod}
+}
 
 Regex
 = "/" reg:("^"? RegularExpression "$"? {return text()}) "/" tag:("is"/"i"/"s")? [ ]* mod:RegexModifier?
-    { 	let insensitive = (tag === 'i' || tag === 'is') ? true : false;
+    { 	
+        if(mod != null)
+        {
+            let _mod = mod.slice();
+            _mod.sort();
+            for(let i = 0; i < _mod.length - 1; i++)
+                if(_mod[i + 1] === _mod[i])
+                    error("duplicate modifier");
+        }
+        let insensitive = (tag === 'i' || tag === 'is') ? true : false;
     	let newLine = (tag === 's' || tag === 'is') ? true : false;
         return { regex: reg, case_insensitive: insensitive, match_newLine: newLine, modifier: mod }
     }
@@ -216,7 +264,7 @@ OrHex
    
 
 KeyValuePair
-= key:[a-zA-Z0-9_]+ _ op:"=" _ val:(Integer / String / "true" / "false") _ { return { left:key.join(''), operator:op, right:val }}
+= key:([_a-zA-Z][a-zA-Z0-9_]+) _ op:"=" _ val:([0-9]+ / String / "true" / "false") _ { return { left:key.join(''), operator:op, right:val }}
     
 String
 = "\\"" str:[^\\"]* "\\"" { return "\\""+str.join('')+"\\""}
@@ -232,14 +280,13 @@ NumberLower256
 = num:([2][5][0-6] / [2][0-4][0-9] / [1][0-9][0-9] / [1-9][0-9] / [0-9])
     { if( typeof num === 'string' ) return num; else return num.join('') }
 
-//TODO controllare che ogni modificatore sia presente una sola volta
 StringModifier
-= mod:"nocase" mod1:(__ !("xor")!("base64")!("base64wide") m:AllModifier {return m} )* { return [mod].concat(mod1) } 
-    / mod:"wide" mod1:(__ m:AllModifier {return m} )* { return [mod].concat(mod1) } / mod:"ascii" mod1:(__  m:AllModifier {return m} )* { return [mod].concat(mod1) }
-    / mod:"xor" mod1:(__ !("nocase")!("base64")!("base64wide") m:AllModifier {return m} )* { return [mod].concat(mod1) }
+= mod:"nocase" mod1:(__ !("xor")!("base64")!("base64wide") m:AllModifier {return m} )* { return [{modifier: mod, customAlphabet: null}].concat(mod1) } 
+    / mod:"wide" mod1:(__ m:AllModifier {return m} )* { return [{modifier: mod, customAlphabet: null}].concat(mod1) } / mod:"ascii" mod1:(__  m:AllModifier {return m} )* { return [{modifier: mod, customAlphabet: null}].concat(mod1) }
+    / mod:"xor" mod1:(__ !("nocase")!("base64")!("base64wide") m:AllModifier {return m} )* { return [{modifier: mod, customAlphabet: null}].concat(mod1) }
     / mod:Base64Mod mod1:(__ !("xor")!("nocase")!("fullword") m:AllModifier {return m} )* { return [mod].concat(mod1) }
-    / mod:"fullword" mod1:(__ !("base64")!("base64wide") m:AllModifier {return m} )* { return [mod].concat(mod1) }
-	/ mod:"private" mod1:(__  m:AllModifier {return m} )* { return [mod].concat(mod1) }
+    / mod:"fullword" mod1:(__ !("base64")!("base64wide") m:AllModifier {return m} )* { return [{modifier: mod, customAlphabet: null}].concat(mod1) }
+	/ mod:"private" mod1:(__  m:AllModifier {return m} )* { return [{modifier: mod, customAlphabet: null}].concat(mod1) }
 
 RegexModifier
 = arg:("nocase" (__ r:ReModifier {return r})*
@@ -286,7 +333,11 @@ Escape
 = "\\\\\\"" / "\\\\\\\\" / "\\\\t" / "\\\\n" / "\\\\xdd"
 
 VariableName
-= [_a-zA-Z][_\\-$a-zA-Z0-9]* { return text().trim() }
+= [_a-zA-Z][_\\-$a-zA-Z0-9]* { condVar.push(text().trim()); return text().trim() }
+
+
+VariableNameStrings
+= [_a-zA-Z][_\\-$a-zA-Z0-9]* { stringsVar.push(text().trim()); return text().trim() }
    
 HexChar
 = ("\\\\x"[0-9a-fA-F].{2}) { return text().trim()}

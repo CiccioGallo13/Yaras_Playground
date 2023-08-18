@@ -2,7 +2,7 @@
 import type { GenericOperation } from "../model/model";
     import { Styles, Input, Button, Alert, Icon, Toast, ToastHeader, ToastBody } from "sveltestrap";
     import { copyText } from "svelte-copy";
-    import { metaInfo } from "./constants";
+    import { metaInfo, stringsInfo, conditionInfo } from "./constants";
     import type { Color } from "sveltestrap/src/shared";
 
     let alertColor: Color = "success";
@@ -85,7 +85,7 @@ import type { GenericOperation } from "../model/model";
     function getStringRule() {
         
         let rule = "";
-        rule += "rule "+ ruleName + ":\n{";
+        rule += "rule "+ ruleName + "\n{";
         rule += "    meta:\n";
         for (let _meta of meta) {
             rule += "        " + _meta.left + " " + _meta.operator + " " + _meta.right + "\n";
@@ -99,7 +99,6 @@ import type { GenericOperation } from "../model/model";
             rule += "        " +condition[i] + " " + condtionOperator[i] + "\n";
         }
         rule += "        " + condition[condition.length-1] + "\n}";
-        console.log(rule)
         return rule;
     }
 
@@ -108,20 +107,20 @@ import type { GenericOperation } from "../model/model";
 <Styles />
 
 {#if toastOpen}
-<div class="overlay">
-    <Toast isOpen={toastOpen} style="position: relative; background-color: gray; ">
-        <ToastHeader toggle={toggle}>
-            {toastHeader}
-        </ToastHeader>
-        <ToastBody>
-            {toastBody.split("<code>")[0]}
-            <pre>
-                { toastBody.split("<code>")[1].split("</code>")[0]}
-            </pre>
-            { toastBody.split("</code>")[1]}
-        </ToastBody>
-    </Toast>
-</div>
+<!-- svelte-ignore a11y-click-events-have-key-events -->
+<div class="overlay" on:click={toggle}>
+    <div on:click|stopPropagation={e => e.stopPropagation()}>
+      <Toast isOpen={toastOpen} style="position: relative; overflow: auto; width: 50vw; height: 70vh; background-color: var(--color-lighter); ">
+          <ToastHeader toggle={toggle} style="color: black;">
+              {toastHeader}
+          </ToastHeader>
+          <ToastBody style="overflow: auto;">
+              {@html toastBody}
+          </ToastBody>
+      </Toast>
+    </div>
+  </div>
+  
 {/if}
 
 <div class="rule">
@@ -156,7 +155,8 @@ import type { GenericOperation } from "../model/model";
         Add Meta</Button>
 
     <div class="block">
-        strings:<Button color="warning" style="width:25px; height:25px; border-radius: 20px; display:inline-flex; align-items: center; justify-content: center; font-weight:500; margin-left:40px;">i</Button>
+        strings:<Button color="warning" on:click={() => {toastHeader = "Strings"; toastBody = stringsInfo; toggle()}}
+        style="width:25px; height:25px; border-radius: 20px; display:inline-flex; align-items: center; justify-content: center; font-weight:500; margin-left:40px;">i</Button>
         {#each strings as _string, i}
             <div class="instance">
                 <div class="string-name">
@@ -179,7 +179,8 @@ import type { GenericOperation } from "../model/model";
         Add String</Button>
 
     <div class="block">
-        condition:<Button color="warning" style="width:25px; height:25px; border-radius: 20px; display:inline-flex; align-items: center; justify-content: center; font-weight:500; margin-left:20px;">i</Button>
+        condition:<Button color="warning" on:click={() =>{toastHeader = "Condition"; toastBody = conditionInfo; toggle()}}
+        style="width:25px; height:25px; border-radius: 20px; display:inline-flex; align-items: center; justify-content: center; font-weight:500; margin-left:20px;">i</Button>
         <div class="condition">
             {#each condition as _ , i}
             {#if i > 0}
@@ -240,6 +241,7 @@ import type { GenericOperation } from "../model/model";
     left: 0;
     width: 100%;
     height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
     display: flex;
     align-items: center;
     justify-content: center;

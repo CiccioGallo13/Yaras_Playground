@@ -5,7 +5,7 @@ import { get } from 'svelte/store';
 import { parse } from '../parser/parser';
 
 let textAreaElement;
-let errorMessage: string = '';
+let errorMessage: any = '';
 
 onMount(async () => {
     textAreaElement = document.querySelector('textarea')!
@@ -50,7 +50,13 @@ function handleKeyDown(event: KeyboardEvent) {
   {#if errorMessage === 'Rule parsed successfully'}
     <div class="message-info-ok">{errorMessage}</div>
   {:else}
-    <div class="message-info-error">{errorMessage}</div>
+    <div class="message-info-error">
+      {#if !RegExp("not referenced in condition").test(errorMessage.message)}
+        Line {errorMessage.location.start.line} column {errorMessage.location.start.column}. {errorMessage.message}
+      {:else}
+        {errorMessage.message}
+      {/if}
+      </div>
   {/if}
 {/if}
 

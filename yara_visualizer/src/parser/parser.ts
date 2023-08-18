@@ -9,7 +9,7 @@ export function parse(input: string) {
         parser.parse(input);
     }
     catch (e: any) {
-        return Error(e).message;
+        return e;
     }
     return 'Rule parsed successfully'
 }

@@ -4,6 +4,7 @@ import type { GenericOperation } from "../model/model";
     import { copyText } from "svelte-copy";
     import { metaInfo, stringsInfo, conditionInfo } from "./constants";
     import type { Color } from "sveltestrap/src/shared";
+    import { parse } from "../parser/parser";
 
     let alertColor: Color = "success";
     let alertMessage: string = "Copied to clipboard";
@@ -62,7 +63,7 @@ import type { GenericOperation } from "../model/model";
                 return;
             }
         });
-
+/*
         strings.forEach(element => {
             if(condition.filter(x => x == "$"+element.left).length == 0) {
                 alertColor = "danger";
@@ -72,10 +73,23 @@ import type { GenericOperation } from "../model/model";
                 return;
             }
         });
+*/
+        if(invalid) {
+            return;
+        }
+        let parserOutput = parse(getStringRule());
+        if(parserOutput != "Rule parsed successfully") {
+            alertColor = "danger";
+            alertMessage = 'Line '+parserOutput.location.start.line+' column '+parserOutput.location.start.column+'. '+parserOutput.message;
+            alertOpen = true;
+            invalid = true;
+            return;
+        }
 
         if(invalid) {
             return;
         }
+
         alertColor = "success";
         alertMessage = "Rule copied to clipboard";
         alertOpen = true;
@@ -86,9 +100,12 @@ import type { GenericOperation } from "../model/model";
         
         let rule = "";
         rule += "rule "+ ruleName + "\n{";
-        rule += "    meta:\n";
-        for (let _meta of meta) {
-            rule += "        " + _meta.left + " " + _meta.operator + " " + _meta.right + "\n";
+        if(meta.length > 0)
+        {    
+            rule += "    meta:\n";
+            for (let _meta of meta) {
+                rule += "        " + _meta.left + " " + _meta.operator + " " + _meta.right + "\n";
+            }
         }
         rule += "    strings:\n";
         for (let _string of strings) {
@@ -221,7 +238,7 @@ import type { GenericOperation } from "../model/model";
     <div>{closeCurly}</div>
 
 </div>
-<Alert style="margin:20px;" color={alertColor} isOpen={alertOpen} toggle={() => {alertOpen = false}} fade={true}>
+<Alert style="margin:20px;" color={alertColor} isOpen={alertOpen} toggle={() => {alertOpen = false}} fade={false}>
     {alertMessage}
 </Alert>
 <div class="button-container">

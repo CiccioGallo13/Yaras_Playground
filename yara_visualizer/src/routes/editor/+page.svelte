@@ -3,7 +3,12 @@
     import Tabs from "../../components/tabs.svelte";
     import AdvancedEditor from "../../components/rule-editor-advanced.svelte";
     import BasicEditor from "../../components/rule-editor-basic.svelte";
+    import { onMount } from "svelte";
 
+    onMount(async () => {
+        document.getElementsByTagName("body")[0].setAttribute("data-load", "complete");
+    });
+    
     let tabItems = [{name:"Basic", icon:"puzzle"}, {name:"Advanced", icon:"code-slash"}];
     let activeItem = "Basic";
 

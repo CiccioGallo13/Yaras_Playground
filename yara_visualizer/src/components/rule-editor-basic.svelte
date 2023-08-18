@@ -3,10 +3,9 @@ import type { GenericOperation } from "../model/model";
     import { Styles, Input, Button, Alert, Icon, Toast, ToastHeader, ToastBody } from "sveltestrap";
     import { copyText } from "svelte-copy";
     import { metaInfo, stringsInfo, conditionInfo } from "./constants";
-    import type { Color } from "sveltestrap/src/shared";
     import { parse } from "../parser/parser";
 
-    let alertColor: Color = "success";
+    let alertColor: any = "success";
     let alertMessage: string = "Copied to clipboard";
     let alertOpen: boolean = false;
     let toastOpen: boolean = false;
@@ -46,7 +45,7 @@ import type { GenericOperation } from "../model/model";
         condtionOperator.forEach(element => {
             if(element != "and" && element != "or") {
                 alertColor = "danger";
-                alertMessage = "Invalid condition operator";
+                alertMessage = "Select an operator for condition";
                 alertOpen = true;
                 invalid = true;
                 return;
@@ -166,7 +165,7 @@ import type { GenericOperation } from "../model/model";
             </div>
         {/each}
     </div>
-    <Button on:click={() => {meta = [...meta, {left: "", operator: "=", right: ""}]}}
+    <Button id="add-meta" on:click={() => {meta = [...meta, {left: "", operator: "=", right: ""}]}}
         style="color: var(--color-lightest); background-color: var(--color-strongest); margin-left:40px;">
         <Icon name="plus-lg" />
         Add Meta</Button>
@@ -190,7 +189,7 @@ import type { GenericOperation } from "../model/model";
             </div>
         {/each}
     </div>
-    <Button on:click={() => {strings = [...strings, {left: "", operator: "=", right: ""}]}}
+    <Button id="add-string" on:click={() => {strings = [...strings, {left: "", operator: "=", right: ""}]}}
         style="color: var(--color-lightest); background-color: var(--color-strongest); margin-left:40px;">
         <Icon name="plus-lg" />
         Add String</Button>
@@ -203,6 +202,7 @@ import type { GenericOperation } from "../model/model";
             {#if i > 0}
               <div class="input-container">
                 <Input type="select" style="margin:0 20px;" bind:value={condtionOperator[i-1]} >
+                  <option>Select operator</option>
                   <option>and</option>
                   <option>or</option>
                 </Input>
@@ -220,12 +220,12 @@ import type { GenericOperation } from "../model/model";
           {/each}
 
         </div>
-        <Button on:click={() => {condition = [...condition, ""]; condtionOperator=[...condtionOperator, ""]}}
+        <Button id="add-cond" on:click={() => {condition = [...condition, ""]; condtionOperator=[...condtionOperator, "Select operator"]}}
             style="color: var(--color-lightest); background-color: var(--color-strongest)">
             <Icon name="plus-lg" />
             Add Condition</Button>
         {#if condition.length > 1}
-            <Button on:click={() => {removeElement('condition', condition.length-1)}}
+            <Button id="rm-cond" on:click={() => {removeElement('condition', condition.length-1)}}
                 style=" background-color: #943131;">
                 <Icon name="dash-lg" />
                 Remove Condition</Button>
@@ -238,11 +238,23 @@ import type { GenericOperation } from "../model/model";
     <div>{closeCurly}</div>
 
 </div>
-<Alert style="margin:20px;" color={alertColor} isOpen={alertOpen} toggle={() => {alertOpen = false}} fade={false}>
-    {alertMessage}
-</Alert>
+
+{#if alertOpen}
+    {#if alertColor == "success"}
+    <div class="custom-alert-success">
+        {alertMessage}
+        <button class="close-button" on:click={() =>{alertOpen=false}}>&times;</button>
+      </div>
+    {:else if alertColor =="danger"}
+    <div class="custom-alert-danger">
+        {alertMessage}
+        <button class="close-button" on:click={() =>{alertOpen=false}}>&times;</button>
+      </div>
+    {/if}
+
+{/if}
 <div class="button-container">
-    <Button on:click={copyToClipboard}
+    <Button id="copy-button" on:click={copyToClipboard}
     style="background-color: var(--color-active); border-color: var(--color-active); color: var(--color-lightest);">
     <Icon name="files" />
     Copy rule</Button>
@@ -311,6 +323,41 @@ import type { GenericOperation } from "../model/model";
   .string-name {
     display: flex;
     align-items: center;
+  }
+
+  .custom-alert-success {
+    margin: 10px;
+    background-color: #38a656;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: 20px;
+    padding-right: 10px;
+    z-index: 1; 
+  }
+
+  .custom-alert-danger {
+    margin: 10px;
+    background-color: #bd4e48;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: 20px;
+    padding-right: 10px;
+    z-index: 1; 
+  }
+
+  .close-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    color: rgb(54, 54, 54);
   }
 </style>
 

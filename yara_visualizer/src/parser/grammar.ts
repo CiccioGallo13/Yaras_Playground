@@ -36,6 +36,21 @@ Rule
                     error("Variable $"+stringsVar[i]+" not referenced in condition");
             }
         }
+        for(let i = 0; i< condVar.length; i++)
+        {
+            let found = false;
+            for(let j = 0; j < stringsVar.length; j++)
+            {
+                const regexPattern = condVar[i].replace(/\\*/g, '.*');
+                if(stringsVar[j].match(regexPattern) != null)
+                {
+                    found = true;
+                    break;
+                }
+            }
+            if(!found)
+                error("Variable $"+condVar[i]+" not referenced in strings");
+        }
         return {name: name, tags: tag, body: body}
     }
 
@@ -70,7 +85,7 @@ BooleanExpression
 
 BooleanExpression1
 = _ b1:(InInterval/ StringSet / ConditionVariableOperation / For / BooleanExpression / ConditionVariable) _ op:("and"/"or") _ b2:ConditionExpression { return { left: b1, operator: op , right: b2} }
-	/  _ b1:(InInterval/ StringSet / ConditionVariableOperation / For / BooleanExpression / ConditionVariable) {return b1}
+	/  _ b1:(InInterval/ StringSet / ConditionVariableOperation / For / BooleanExpression / ConditionVariable/String) {return b1}
 
 
 

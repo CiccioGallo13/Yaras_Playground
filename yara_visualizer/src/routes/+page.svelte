@@ -120,16 +120,22 @@
         console.log(jsonRequest);
         
         _sendData(jsonRequest).then((response) => {
-            matches = response
-            highlightedText = _preProcessMatch(matches);
-            console.log(response);
-            setTimeout(() => {
+            if(!response.message){
+                matches = response
+                highlightedText = _preProcessMatch(matches);
+                console.log(response);
+                setTimeout(() => {
+                    loadingResponse = false;
+                    renderTable = true;
+                }, 0);
+            }else{
+                    setTimeout(() => {
                 loadingResponse = false;
-                renderTable = true;
+                alert(response.message);
             }, 0);
+            }
         }
         , (error) => {
-        console.log(error);
         setTimeout(() => {
             loadingResponse = false;
             alert("Server unreachable");

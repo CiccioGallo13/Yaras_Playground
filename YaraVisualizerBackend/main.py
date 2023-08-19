@@ -16,6 +16,7 @@ origins = [
     "http://localhost.tiangolo.com",
     "https://localhost.tiangolo.com",
     "http://localhost:1313",
+    "http://localhost:1313/*",
     "http://localhost:8000",
 ]
 
@@ -32,6 +33,7 @@ app.add_middleware(
 async def unicorn_exception_handler(request, exc):
     return JSONResponse(
         status_code=http.HTTPStatus.BAD_REQUEST,
+        headers={"Access-Control-Allow-Origin": "*"},
         content={"message": str(exc)},
     )
 

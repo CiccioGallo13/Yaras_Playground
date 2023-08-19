@@ -20,6 +20,7 @@ def match(rules: str, data: str, complete_scan: bool):
 
     # scan using custom rules sent in the json request
     if rules:
+        #return an exception if the rules are not valid
         rule = yara.compile(source=rules)
         matches = rule.match(data=data)
         response += create_iterable_object(matches)

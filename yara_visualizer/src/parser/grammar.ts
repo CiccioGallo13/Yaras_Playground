@@ -228,7 +228,7 @@ Regex
     }
 
 HexString
-= "{" _ arg:( q:(HexByte / Jump / OrHex) __ {return q})+ _ "}" [ ]* p:"private"?
+= "{" _ arg:( q:(HexByte / Jump / OrHex) _ {return q})+ _ "}" [ ]* p:"private"? [ ]* Comment?
     { let _p = (p != null) ? true : false; return { args: arg, private: _p } }
 
 SpecialForVariable
@@ -362,11 +362,11 @@ HexChar
 = ("\\\\x"[0-9a-fA-F].{2}) { return text().trim()}
 
 _ "whitespace"
-  = [ \\t\\n\\r]* Comment?
+  = [ \\t\\n\\r]* Comment? [ \\t\\n\\r]*
   
 __ "atLeastOneWhitespace"
-= [ ]+ Comment?
+= [ ]+ Comment? [ \\t\\n\\r]*
     
 _n "newline"
-= ([ ]*[\\n]+[ ]*)+ Comment?
+= ([ ]*[\\n]+[ ]*)+ Comment? [ \\t\\n\\r]*
 `;

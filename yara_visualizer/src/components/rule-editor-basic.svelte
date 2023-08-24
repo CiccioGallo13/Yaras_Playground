@@ -4,6 +4,7 @@ import type { GenericOperation } from "../model/model";
     import { copyText } from "svelte-copy";
     import { metaInfo, stringsInfo, conditionInfo } from "./constants";
     import { parse } from "../parser/parser";
+    import { ruleName, meta, strings, condition, condtionOperator } from "$lib/stores";
 
     let alertColor: any = "success";
     let alertMessage: string = "Copied to clipboard";
@@ -12,12 +13,9 @@ import type { GenericOperation } from "../model/model";
     let toastHeader: string = "";
     let toastBody: string = "";
 
-
-    let ruleName: string = "rule_name";
-    let meta: GenericOperation[] = [];
-    let strings: GenericOperation[] = [];
-    let condition: string[] = [""];
-    let condtionOperator: string[] = [];
+    //let meta: GenericOperation[] = [];
+    //let strings: GenericOperation[] = [];
+    //let condition: string[] = [""];
     const openCurly = "{";
     const closeCurly = "}";
 
@@ -28,21 +26,21 @@ import type { GenericOperation } from "../model/model";
     function removeElement<T>(whichArray: string, indexToRemove: number) {
         switch(whichArray) {
             case "meta":
-                meta = meta.filter((_, index) => index != indexToRemove);
+                $meta = $meta.filter((_, index) => index != indexToRemove);
                 break;
             case "strings":
-                strings = strings.filter((_, index) => index != indexToRemove);
+                $strings = $strings.filter((_, index) => index != indexToRemove);
                 break;
             case "condition":
-                condition = condition.filter((_, index) => index != condtionOperator.length-1);
-                condtionOperator = condtionOperator.filter((_, index) => index != condtionOperator.length-1);
+                $condition = $condition.filter((_, index) => index != $condtionOperator.length-1);
+                $condtionOperator = $condtionOperator.filter((_, index) => index != $condtionOperator.length-1);
                 break;
         }
     }
 
     function copyToClipboard() {
         let invalid = false;
-        condtionOperator.forEach(element => {
+        $condtionOperator.forEach(element => {
             if(element != "and" && element != "or") {
                 alertColor = "danger";
                 alertMessage = "Select an operator for condition";
@@ -53,7 +51,7 @@ import type { GenericOperation } from "../model/model";
             
         });
 
-        condition.forEach(element => {
+        $condition.forEach(element => {
             if(!element.startsWith("$")) {
                 alertColor = "danger";
                 alertMessage = "Select a variable for condition";
@@ -62,17 +60,7 @@ import type { GenericOperation } from "../model/model";
                 return;
             }
         });
-/*
-        strings.forEach(element => {
-            if(condition.filter(x => x == "$"+element.left).length == 0) {
-                alertColor = "danger";
-                alertMessage = "Unused variable $"+element.left+" in condition";
-                alertOpen = true;
-                invalid = true;
-                return;
-            }
-        });
-*/
+
         if(invalid) {
             return;
         }
@@ -98,23 +86,23 @@ import type { GenericOperation } from "../model/model";
     function getStringRule() {
         
         let rule = "";
-        rule += "rule "+ ruleName + "\n{";
-        if(meta.length > 0)
+        rule += "rule "+ $ruleName + "\n{";
+        if($meta.length > 0)
         {    
             rule += "    meta:\n";
-            for (let _meta of meta) {
+            for (let _meta of $meta) {
                 rule += "        " + _meta.left + " " + _meta.operator + " " + _meta.right + "\n";
             }
         }
         rule += "    strings:\n";
-        for (let _string of strings) {
+        for (let _string of $strings) {
             rule += "        " +"$"+_string.left + " " + _string.operator + " " + _string.right + "\n";
         }
         rule += "    condition:\n";
-        for (let i = 0; i < condition.length-1; i++) {
-            rule += "        " +condition[i] + " " + condtionOperator[i] + "\n";
+        for (let i = 0; i < $condition.length-1; i++) {
+            rule += "        " +$condition[i] + " " + $condtionOperator[i] + "\n";
         }
-        rule += "        " + condition[condition.length-1] + "\n}";
+        rule += "        " + $condition[$condition.length-1] + "\n}";
         return rule;
     }
 
@@ -141,7 +129,7 @@ import type { GenericOperation } from "../model/model";
 
 <div class="rule">
     <div class="rule-name">
-        rule <input type="text" bind:value={ruleName} />
+        rule <input type="text" bind:value={$ruleName} />
     </div>
     <div>{openCurly}</div>
 
@@ -149,7 +137,7 @@ import type { GenericOperation } from "../model/model";
     <div class="block">
             meta:<Button color="warning" on:click={() => {toastHeader = "Metadata"; toastBody = metaInfo; toggle()}}
             style="width:25px; height:25px; border-radius: 20px; display:inline-flex; align-items: center; justify-content: center; font-weight:500; margin-left:50px;">i</Button>
-        {#each meta as _meta, i}
+        {#each $meta as _meta, i}
             <div class="instance">
                 <div class="meta-name">
                     <Input style="height:30px;" type="text" bind:value={_meta.left} />
@@ -165,7 +153,7 @@ import type { GenericOperation } from "../model/model";
             </div>
         {/each}
     </div>
-    <Button id="add-meta" on:click={() => {meta = [...meta, {left: "", operator: "=", right: ""}]}}
+    <Button id="add-meta" on:click={() => {$meta = [...$meta, {left: "", operator: "=", right: ""}]}}
         style="color: var(--color-lightest); background-color: var(--color-strongest); margin-left:40px;">
         <Icon name="plus-lg" />
         Add Meta</Button>
@@ -173,7 +161,7 @@ import type { GenericOperation } from "../model/model";
     <div class="block">
         strings:<Button color="warning" on:click={() => {toastHeader = "Strings"; toastBody = stringsInfo; toggle()}}
         style="width:25px; height:25px; border-radius: 20px; display:inline-flex; align-items: center; justify-content: center; font-weight:500; margin-left:40px;">i</Button>
-        {#each strings as _string, i}
+        {#each $strings as _string, i}
             <div class="instance">
                 <div class="string-name">
                    $ <Input style="height:30px;" type="text" bind:value={_string.left} />
@@ -189,7 +177,7 @@ import type { GenericOperation } from "../model/model";
             </div>
         {/each}
     </div>
-    <Button id="add-string" on:click={() => {strings = [...strings, {left: "", operator: "=", right: ""}]}}
+    <Button id="add-string" on:click={() => {$strings = [...$strings, {left: "", operator: "=", right: ""}]}}
         style="color: var(--color-lightest); background-color: var(--color-strongest); margin-left:40px;">
         <Icon name="plus-lg" />
         Add String</Button>
@@ -198,10 +186,10 @@ import type { GenericOperation } from "../model/model";
         condition:<Button color="warning" on:click={() =>{toastHeader = "Condition"; toastBody = conditionInfo; toggle()}}
         style="width:25px; height:25px; border-radius: 20px; display:inline-flex; align-items: center; justify-content: center; font-weight:500; margin-left:20px;">i</Button>
         <div class="condition">
-            {#each condition as _ , i}
+            {#each $condition as _ , i}
             {#if i > 0}
               <div class="input-container">
-                <Input type="select" style="margin:0 20px;" bind:value={condtionOperator[i-1]} >
+                <Input type="select" style="margin:0 20px;" bind:value={$condtionOperator[i-1]} >
                   <option>Select operator</option>
                   <option>and</option>
                   <option>or</option>
@@ -212,7 +200,7 @@ import type { GenericOperation } from "../model/model";
             <div class="input-container">
               <Input type="select" style="margin:0 20px;" bind:value={_}>
                 <option> Select variable </option>
-                {#each strings as string}
+                {#each $strings as string}
                   <option value={'$'+string.left}> {"$"+string.left} </option>  
                 {/each}
               </Input>
@@ -220,12 +208,12 @@ import type { GenericOperation } from "../model/model";
           {/each}
 
         </div>
-        <Button id="add-cond" on:click={() => {condition = [...condition, ""]; condtionOperator=[...condtionOperator, "Select operator"]}}
+        <Button id="add-cond" on:click={() => {$condition = [...$condition, ""]; $condtionOperator =[...$condtionOperator, "Select operator"]}}
             style="color: var(--color-lightest); background-color: var(--color-strongest)">
             <Icon name="plus-lg" />
             Add Condition</Button>
-        {#if condition.length > 1}
-            <Button id="rm-cond" on:click={() => {removeElement('condition', condition.length-1)}}
+        {#if $condition.length > 1}
+            <Button id="rm-cond" on:click={() => {removeElement('condition', $condition.length-1)}}
                 style=" background-color: #943131;">
                 <Icon name="dash-lg" />
                 Remove Condition</Button>
@@ -254,6 +242,11 @@ import type { GenericOperation } from "../model/model";
 
 {/if}
 <div class="button-container">
+    <Button id="clear-button" on:click={() => {$meta = []; $strings = []; $condition = [""]; $condtionOperator = []; $ruleName = "rule_name"}}
+        style="background-color: var(--color-strongest); border-color: var(--color-strongest); color: var(--color-lightest); margin-right: 20px;">
+    <Icon name="trash" />
+    Clear</Button>
+    
     <Button id="copy-button" on:click={copyToClipboard}
     style="background-color: var(--color-active); border-color: var(--color-active); color: var(--color-lightest);">
     <Icon name="files" />

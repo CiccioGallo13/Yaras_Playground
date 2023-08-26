@@ -7,7 +7,7 @@ test.beforeEach(async ({page})=> {
 })
 
 test('title', async ({ page }) => {
-  await expect(page.getByText('YARA VISUALIZER')).toBeVisible();
+  await expect(page.getByText('YARA\'S PLAYGROUND')).toBeVisible();
 });
 
 

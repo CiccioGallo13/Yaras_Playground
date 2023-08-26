@@ -1,7 +1,7 @@
 import yara
 import os
 from models import RequestModel, CustomMatch, CustomStringMatch, CustomStringMatchInstance, \
-    ResponseModel, Encodings
+    ResponseModel
 import utils
 
 
@@ -9,7 +9,7 @@ def analyze_data(obj: RequestModel):
     return ResponseModel(matches=match(obj.rules, obj.data, obj.complete_scan))
 
 
-# configure the yara-rules module and check the data
+# configures the yara-rules module and check the data
 def match(rules: str, data: str, complete_scan: bool):
     response: list[CustomMatch] = []
     # scan using rules in the directory 'ReversingLabs-Yara-Rules'
@@ -28,7 +28,7 @@ def match(rules: str, data: str, complete_scan: bool):
     return response
 
 
-# create a dictionary with all the 'filename': 'filepath' of the rules used from ReversingLabs (
+# creates a dictionary with all the 'filename': 'filepath' of the rules used from ReversingLabs (
 # https://github.com/reversinglabs/reversinglabs-yara-rules.git)
 def scan_files():
     path = 'ReversingLabs-Yara-Rules/yara-rules'
@@ -37,24 +37,6 @@ def scan_files():
         for file in os.listdir(path + '/' + dir):
             rules_files.update({os.path.splitext(file)[0]: path + '/' + dir + '/' + file})
     return rules_files
-
-
-def encode_data(obj: RequestModel, encoding: Encodings):
-    match encoding:
-        case Encodings.HEX:
-            return utils.string_to_hex(obj.data)
-        case Encodings.BINARY:
-            return utils.string_to_binary(obj.data)
-        case Encodings.ASCII:
-            return utils.string_to_ascii(obj.data)
-        case Encodings.UTF8:
-            return utils.string_to_utf8(obj.data)
-        case Encodings.UTF16:
-            return utils.string_to_utf16(obj.data)
-        case Encodings.UTF32:
-            return utils.string_to_utf32(obj.data)
-        case Encodings.RAW:
-            return obj.data
 
 
 def create_iterable_object(matches_: list[yara.Match]):

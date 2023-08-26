@@ -24,18 +24,6 @@
 
 import "pe"
 
-rule scratch {
-    meta:
-        author      = "JFK"
-        vendor      = "Usa"
-
-    strings:
-        $a = "dallas"
-
-    condition:
-        $a
-
-}
 
 rule cert_blocklist_05e2e6a4cd09ea54d665b075fe22A256 {
     meta:

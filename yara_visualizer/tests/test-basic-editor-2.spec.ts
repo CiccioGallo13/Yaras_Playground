@@ -23,6 +23,21 @@ test('removing-string', async ({ page }) => {
     await expect(page.getByText('$ = remove')).toBeHidden();
 });
 
+test('clear-all', async ({ page }) => {
+    await page.getByRole('button', { name: ' Add Meta' }).click();
+    await page.locator('#add-string').click();
+    await page.getByRole('textbox').nth(1).fill('meta1');
+    await page.getByRole('textbox').nth(2).click();
+    await page.getByRole('textbox').nth(2).fill('true');
+    await page.getByRole('combobox').selectOption('$var');
+    await page.locator('#clear-button').click();
+    await expect(page.getByRole('textbox').nth(1)).toBeHidden();
+    await expect(page.getByRole('textbox').nth(2)).toBeHidden();
+    await expect(page.getByRole('textbox').nth(3)).toBeHidden();
+    await expect(page.getByRole('textbox').nth(4)).toBeHidden();
+    await expect(page.getByRole('combobox')).toHaveValue('');
+});
+
 test('multiple--condtition', async ({ page }) => {
     await page.locator('#add-string').click();
     await page.getByRole('textbox').nth(3).click();

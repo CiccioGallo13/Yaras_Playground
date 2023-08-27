@@ -38,7 +38,7 @@
     li {
         margin: 0 16px;
         font-size: 18px;
-        color: (--color-strongest);
+        color: var(--color-strongest);
         cursor: pointer;
     }
     .active {

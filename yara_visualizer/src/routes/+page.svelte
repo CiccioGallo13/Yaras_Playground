@@ -1,6 +1,5 @@
 <script lang="ts">
-    import { Button, Card, CardBody, CardFooter, Col, Container, FormGroup, FormText, Input, Label, Row, Styles, Spinner, Table } from 'sveltestrap';
-    import type { Color } from 'sveltestrap/src/shared';
+    import { Button, Card, CardBody, CardFooter, Col, Container, FormGroup, FormText, Input, Label, Row, Styles, Spinner } from 'sveltestrap';
     import { _sendData, _highlightInstances, _highlightWordByOffset, _getFormattedData } from '$lib/utils';
     import { _encodings, _preProcessMatch } from './+page';
     import { page } from '$app/stores';
@@ -16,7 +15,6 @@
         document.getElementsByTagName("body")[0].setAttribute("data-load", "complete");
     });
     
-    const color: Color = 'dark';
     let dataFiles: FileList;
     let rulesFiles: FileList;
     let completeScan: boolean = false;
@@ -49,6 +47,7 @@
 
             reader.onerror = function() {
                 console.log(reader.error);
+                loadingFile = false;
             };
         }
                 
@@ -64,8 +63,10 @@
             if (file.type != "text/plain"){
                 if((file.name.endsWith(".yar")) || file.name.endsWith(".yara"))
                     reader.readAsBinaryString(file)
-                else
+                else{
                     alert("File extension not supported");
+                    loadingFile = false;
+                }
             }
             else
                 reader.readAsText(file);
@@ -80,6 +81,7 @@
 
             reader.onerror = function() {
                 console.log(reader.error);
+                loadingFile = false;
             };
         }
     }

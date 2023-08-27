@@ -9,10 +9,16 @@ let errorMessage: any = '';
 
 onMount(async () => {
     textAreaElement = document.querySelector('textarea')!
+    resizeTextArea();
     });
 
-
 function handleKeyDown(event: KeyboardEvent) {
+
+    if(event.key === 'ArrowRight' && textAreaElement!.selectionStart === textAreaElement!.value.length){
+      //scroll to the right
+      document.getElementById('text-editor')!.scrollLeft += 20
+      return;
+    }
 
     if (event.key === 'Tab') {
       const start = textAreaElement!.selectionStart;
@@ -27,6 +33,9 @@ function handleKeyDown(event: KeyboardEvent) {
 
       event.preventDefault();
     }
+    //resizeTextArea();
+
+    document.getElementById('text-editor')!.scrollLeft = 0;
 
   }
 
@@ -35,16 +44,39 @@ function handleKeyDown(event: KeyboardEvent) {
   }
 
 
+function calcHeight() {
+  let numberOfLineBreaks = $rulesTextArea.split('\n').length;
+  let newHeight = 21 + numberOfLineBreaks * 21 + 7;
+  return newHeight;
+}
+
+function calcWidth() {
+  let maxLineLength = 0;
+  $rulesTextArea.split('\n').forEach(line => {
+    if (line.length > maxLineLength) {
+      maxLineLength = line.length;
+    }
+  })
+
+  return maxLineLength * 9 + 20;
+}
+
+  function resizeTextArea() {
+    let elem: HTMLTextAreaElement = document.querySelector(".resizable")!;
+    elem.style.height = calcHeight() + "px";
+    elem.style.minWidth = calcWidth() + "px";
+  }
+
 
 </script>
 
-<div class="text-editor">
+<div class="text-editor" id="text-editor">
     <div class="line-numbers">
         {#each $rulesTextArea.split('\n') as _, index}
             <span>{index + 1}</span>
         {/each}
     </div>
-    <textarea class="editor" bind:value={$rulesTextArea} on:keydown={handleKeyDown} on:input={parseRules}></textarea>
+    <textarea  class="editor resizable" bind:value={$rulesTextArea} wrap="off" on:keydown={handleKeyDown} on:input={() => {parseRules(); resizeTextArea();}} ></textarea>
 </div>
 {#if errorMessage !== ''}
   {#if errorMessage === 'Rule parsed successfully'}
@@ -83,7 +115,9 @@ function handleKeyDown(event: KeyboardEvent) {
   display: flex;
   gap: 10px;
   font-family: monospace;
+  height: 73vh;
   line-height: 21px;
+  overflow: auto;
   background: #282a3a;
   border-radius: 2px;
   padding: 20px 10px;
@@ -91,13 +125,15 @@ function handleKeyDown(event: KeyboardEvent) {
 
 .editor {
   line-height: 21px;
+  min-height: 21px;
   overflow-y: hidden;
+  overflow-x: hidden;
+  height: 100%;
+  width: 95%;
   padding: 0;
   border: 0;
   background: #282a3a;
   color: #FFF;
-  width: 90vw;
-  height: 65vh;
   outline: none;
   resize: none;
 }

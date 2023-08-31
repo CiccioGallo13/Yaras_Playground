@@ -21,7 +21,7 @@
                     <td>
                         <pre style="max-width: 20vw; overflow: auto;  white-space:pre-wrap; max-height: 200px;">
 {rule.rule}
-{_getFormattedData(JSON.parse(rule.meta.replace(/'/g, '\"')))}
+{_getFormattedData(JSON.parse(rule.meta.replace(/'/g, '\"').replace(/True/g, 'true').replace(/False/g, 'false')))}
                         </pre>
                     </td>
                 

@@ -26,7 +26,7 @@ Rule
                 for(let j = 0; j < condVar.length; j++)
                 {
                     const regexPattern = condVar[j].replace(/\\*/g, '.*');
-                    if(stringsVar[i].match(regexPattern) != null)
+                    if(stringsVar[i].match("^"+regexPattern+"$") != null)
                     {
                         found = true;
                         break;
@@ -42,7 +42,7 @@ Rule
             for(let j = 0; j < stringsVar.length; j++)
             {
                 const regexPattern = condVar[i].replace(/\\*/g, '.*');
-                if(stringsVar[j].match(regexPattern) != null)
+                if(stringsVar[j].match("^"+regexPattern+"$") != null)
                 {
                     found = true;
                     break;

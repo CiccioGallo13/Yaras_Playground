@@ -15,7 +15,6 @@ onMount(async () => {
 function handleKeyDown(event: KeyboardEvent) {
 
     if(event.key === 'ArrowRight' && textAreaElement!.selectionStart === textAreaElement!.value.length){
-      //scroll to the right
       document.getElementById('text-editor')!.scrollLeft += 20
       return;
     }
@@ -33,7 +32,6 @@ function handleKeyDown(event: KeyboardEvent) {
 
       event.preventDefault();
     }
-    //resizeTextArea();
 
     document.getElementById('text-editor')!.scrollLeft = 0;
 

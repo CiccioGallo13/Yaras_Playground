@@ -11,5 +11,5 @@ export function parse(input: string) {
     catch (e: any) {
         return e;
     }
-    return 'Rule parsed successfully'
+    return 'Rule parsed successfully';
 }

@@ -1,7 +1,7 @@
 # YARA's Playground
 This is a web-application that will help you to write and test your YARA rules.
 
-To use the app, you need to clone this repo (or download it), after that you can open the backend folder with you IDE and install the requirements;
+To use the app, you need to clone this repo (or download it), after that you can open the backend folder with you IDE and install the requirements;\
 Python 3.9 is required, and that you can install the requirements using pip:
 ```bash
 pip install -r requirements.txt
@@ -10,7 +10,7 @@ Then you can run the server with:
 ```bash
 uvicorn main:app --reload
 ```
-Once the server is running you can open the frontend folder, here you need to install the dependencies too.
+Once the server is running you can open the frontend folder, here you need to install the dependencies too.\
 You can use npm:
 ```bash
 npm install

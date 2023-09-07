@@ -10,8 +10,8 @@ Then you can run the server with:
 ```bash
 uvicorn main:app --reload
 ```
-Now that the server is running you can open the frontend folder, here you need to install the dependencies too;
-you can use npm:
+Once the server is running you can open the frontend folder, here you need to install the dependencies too.
+You can use npm:
 ```bash
 npm install
 ```

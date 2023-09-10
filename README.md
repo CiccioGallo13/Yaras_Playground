@@ -9,7 +9,8 @@ pip install -r requirements.txt
 if you use Mac OS with Homebrew you may encounter an error when installing the 'yara-python' package,\
 because a package required for installation (openssl) may not be in the correct path. In this case you will need to specify it as follows:\
 ```bash
-LDFLAGS="-L<path_to_the_lib_folder_inside_openssl_dir>" CPPFLAGS="-I<path_to_the_include_folder_inside_openssl_dir>" pip install -r requirements.txt
+LDFLAGS="-L<path_to_the_lib_folder_inside_openssl_dir>" CPPFLAGS="-I<path_to_the_include_folder_inside_openssl_dir>"
+pip install -r requirements.txt
 ```
 Then you can run the server with:
 ```bash

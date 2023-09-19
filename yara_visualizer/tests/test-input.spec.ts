@@ -27,5 +27,5 @@ await page.locator('#rulesTextArea').click();
 await page.locator('#rulesTextArea').fill('example');
 await page.getByRole('link', { name: 'Rule Editor' }).click();
 await page.getByText('Advanced').click();
-await expect(page.getByRole('textbox')).toHaveValue('example');
+await expect(page.locator('#text-area-editor')).toHaveValue('example');
 });

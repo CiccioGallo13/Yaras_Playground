@@ -1,10 +1,11 @@
 <script lang="ts">
-import type { GenericOperation } from "../model/model";
     import { Styles, Input, Button, Alert, Icon, Toast, ToastHeader, ToastBody } from "sveltestrap";
     import { copyText } from "svelte-copy";
     import { metaInfo, stringsInfo, conditionInfo } from "./constants";
     import { parse } from "../parser/parser";
     import { ruleName, meta, strings, condition, condtionOperator } from "$lib/stores";
+    import { slide } from "svelte/transition";
+    import { flip } from "svelte/animate";
 
     let alertColor: any = "success";
     let alertMessage: string = "Copied to clipboard";
@@ -13,9 +14,6 @@ import type { GenericOperation } from "../model/model";
     let toastHeader: string = "";
     let toastBody: string = "";
 
-    //let meta: GenericOperation[] = [];
-    //let strings: GenericOperation[] = [];
-    //let condition: string[] = [""];
     const openCurly = "{";
     const closeCurly = "}";
 
@@ -138,7 +136,7 @@ import type { GenericOperation } from "../model/model";
             meta:<Button color="warning" on:click={() => {toastHeader = "Metadata"; toastBody = metaInfo; toggle()}}
             style="width:25px; height:25px; border-radius: 20px; display:inline-flex; align-items: center; justify-content: center; font-weight:500; margin-left:50px;">i</Button>
         {#each $meta as _meta, i}
-            <div class="instance">
+            <div class="instance" transition:slide|local={{duration:250}}>
                 <div class="meta-name">
                     <Input style="height:30px;" type="text" bind:value={_meta.left} />
                 </div>
@@ -162,7 +160,7 @@ import type { GenericOperation } from "../model/model";
         strings:<Button color="warning" on:click={() => {toastHeader = "Strings"; toastBody = stringsInfo; toggle()}}
         style="width:25px; height:25px; border-radius: 20px; display:inline-flex; align-items: center; justify-content: center; font-weight:500; margin-left:40px;">i</Button>
         {#each $strings as _string, i}
-            <div class="instance">
+            <div class="instance" transition:slide|local={{duration:250}}>
                 <div class="string-name">
                    $ <Input style="height:30px;" type="text" bind:value={_string.left} />
                 </div>
@@ -187,6 +185,7 @@ import type { GenericOperation } from "../model/model";
         style="width:25px; height:25px; border-radius: 20px; display:inline-flex; align-items: center; justify-content: center; font-weight:500; margin-left:20px;">i</Button>
         <div class="condition">
             {#each $condition as _ , i}
+            <div class="cond-instance" transition:slide|local={{duration:250}}>
             {#if i > 0}
               <div class="input-container">
                 <Input type="select" style="margin:0 20px;" bind:value={$condtionOperator[i-1]} >
@@ -204,6 +203,7 @@ import type { GenericOperation } from "../model/model";
                   <option value={'$'+string.left}> {"$"+string.left} </option>  
                 {/each}
               </Input>
+            </div>
             </div>
           {/each}
 
@@ -276,6 +276,11 @@ import type { GenericOperation } from "../model/model";
         max-width: 70vw;
         margin: 20px;
         
+    }
+
+    .cond-instance {
+        display: flex;
+        flex-direction: row;
     }
 
     .operator {

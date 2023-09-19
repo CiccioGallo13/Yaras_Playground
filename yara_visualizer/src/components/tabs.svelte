@@ -2,17 +2,20 @@
     import { createEventDispatcher } from 'svelte';
     import { Styles, Icon } from 'sveltestrap';
     import type { TabItem } from '../model/model';
+    import { fly } from 'svelte/transition';
+    import { linear } from 'svelte/easing';
 
     const dispatch = createEventDispatcher();
 
     export let tabItems: TabItem[];
     export let activeItem: string;
 
+	let options = {duration: 300, easing: linear};
 </script>
 
 <Styles />
 
-<div class="tabs">
+<div class="tabs" in:fly|global={{...options, x: -1000, delay: 100}} out:fly|global={{...options, x: -1000}}>
     <ul>
         {#each tabItems as item}
             <!-- svelte-ignore a11y-click-events-have-key-events -->

@@ -74,7 +74,7 @@ function calcWidth() {
             <span>{index + 1}</span>
         {/each}
     </div>
-    <textarea  class="editor resizable" bind:value={$rulesTextArea} wrap="off" on:keydown={handleKeyDown} on:input={() => {parseRules(); resizeTextArea();}} ></textarea>
+    <textarea id="text-area-editor" class="editor resizable" bind:value={$rulesTextArea} wrap="off" on:keydown={handleKeyDown} on:input={() => {parseRules(); resizeTextArea();}} ></textarea>
 </div>
 {#if errorMessage !== ''}
   {#if errorMessage === 'Rule parsed successfully'}

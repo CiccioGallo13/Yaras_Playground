@@ -2,3 +2,4 @@ fastapi~=0.100.0
 starlette~=0.27.0
 pydantic~=2.0.3
 yara-python~=4.3.1
+uvicorn

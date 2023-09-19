@@ -10,6 +10,8 @@
     import EncodingsTable from '../components/encodings-table.svelte';
     import type { HighlightedMatches, JsonRequest, JsonResponse, State } from '../model/model';
     import MatchingTable from '../components/matching-table.svelte';
+    import { fly } from 'svelte/transition';
+    import { linear } from 'svelte/easing';
 
     onMount(async () => {
         document.getElementsByTagName("body")[0].setAttribute("data-load", "complete");
@@ -21,6 +23,8 @@
     let renderTable: boolean = false;
     let loadingResponse: boolean = false;
     let loadingFile: boolean = false;
+
+    let options = {duration: 300, easing: linear};
 
     let matches: JsonResponse
     let highlightedText: Map<string, HighlightedMatches>
@@ -159,6 +163,7 @@
     </div>
 {/if}
 
+<div in:fly|global={{...options, duration: 500, x: 3000, delay: 10}} out:fly|global={{...options, x: -1000}}>
 <Card class="mx-auto" style="border-radius: 0; background-color: var(--color-verylight)">
     <CardBody>
         <Row cols={2}>
@@ -228,16 +233,19 @@
 </div>
 {/if}
 {#if renderTable}
-<Container>
-
-    <EncodingsTable {highlightedText} {matches} />
-
-    <h3>Match Details</h3>
-
-    <MatchingTable {matches} />
-
-</Container>
+<div in:fly|global={{...options, duration: 500, x: -500, delay: 0}}>
+    <Container>
+        
+        <EncodingsTable {highlightedText} {matches} />
+        
+        <h3>Match Details</h3>
+        
+        <MatchingTable {matches} />
+        
+    </Container>
+</div>
 {/if}
+</div>
 </body>
 
 <style>

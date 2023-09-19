@@ -109,7 +109,7 @@ InInterval
     { return { prefix: def, left: arg, operator:op, right: int} }
 
 IntervalVariable
-= not:"~"? type:[$#] VariableName { if(not && type === '$') error("syntax error"); else return text().trim() }  / StringSet 
+= not:"~"? type:[$#] VariableNameFor { if(not && type === '$') error("syntax error"); else return text().trim() }  / StringSet 
 
 ConditionVariableInterval
 = _ def:("not defined"/"not")? _ tl:"~"? _ int1:(_ def1:("not defined"/"not")? _ tl1:"~"? 
@@ -151,7 +151,7 @@ BooleanForContext1
 
 
 InIntervalFor
-= _ def:("not defined"/"not")? _ arg:("$" VariableName {return text().trim()}/StringSet/SpecialForVariable) _ op:"at" _ int:(CondInteger / "(" _ c:CondInteger _ ")" { return c})
+= _ def:("not defined"/"not")? _ arg:("$" VariableNameFor {return text().trim()}/StringSet/SpecialForVariable) _ op:"at" _ int:(CondInteger / "(" _ c:CondInteger _ ")" { return c})
     { return { prefix: def, left: arg, operator:op, right: int} }
     / _ def:("not defined"/"not")? _ arg:(IntervalVariable/SpecialForVariable) _ op:"in" _ "(" int1:(i1:ConditionVariableInterval ".." i2:ConditionVariableInterval {return {left: i1, operator: "..", right:i2}}) ")"
     { return {prefix: def, left: arg, operator:op, right: int1} }
@@ -166,10 +166,10 @@ ForVariableOperation
 
     
 ForVariable
-= ([@!]? (VariableName ".")? VariableName ("[" _ (VariableName/[0-9]+) _ "]")?/SpecialForVariable) ("." VariableName)?  {return text().trim()}
+= ([@!]? (VariableName ".")? VariableName ("[" _ (VariableNameFor/[0-9]+) _ "]")?/SpecialForVariable) ("." VariableName)?  {return text().trim()}
 
 ForInterval
- = _ val:("any"/"all"/"none"/Integer) _ name1:VariableName _ name2:("," _ v:VariableName {return v})* _ "in" _ 
+ = _ val:("any"/"all"/"none"/Integer) _ name1:VariableNameFor _ name2:("," _ v:VariableName {return v})* _ "in" _ 
  "(" _ int1:(i1:ConditionVariableInterval ".." i2:ConditionVariableInterval {return [i1,"..",i2]} / 
  	     n1:Integer _ n2:("," _ _n:Integer {return _n;})* {return [n1].concat(n2)} /
      	 n1:String _ n2:("," _ _n:String {return _n;})* {return [n1].concat(n2)} /
@@ -354,6 +354,8 @@ Escape
 VariableName
 = [_a-zA-Z][_\\-$a-zA-Z0-9]* { condVar.push(text().trim()); return text().trim() }
 
+VariableNameFor
+= [_a-zA-Z][_\\-$a-zA-Z0-9]* { return text().trim() }
 
 VariableNameStrings
 = [_a-zA-Z][_\\-$a-zA-Z0-9]* { stringsVar.push(text().trim()); return text().trim() }

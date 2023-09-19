@@ -6,7 +6,7 @@
     import AdvancedEditor from "../../components/rule-editor-advanced.svelte";
     import BasicEditor from "../../components/rule-editor-basic.svelte";
     import { onMount } from "svelte";
-    import { activeTab } from "$lib/stores";
+    import { activeTab, theme } from "$lib/stores";
 
     onMount(async () => {
         document.getElementsByTagName("body")[0].setAttribute("data-load", "complete");
@@ -24,16 +24,18 @@
 
 <Styles />
 
+<body>
     <Tabs tabItems = {tabItems} activeItem = {$activeTab} on:tabChange={triggerTabChange} />
     {#if $activeTab === 'Basic'}
-        <div class="basic-editor" in:fly|global={{...options, x: -1000, delay: 100}} out:fly|global={{...options, x: -1000}}>
-            <BasicEditor />
-        </div>
+    <div class="basic-editor" in:fly|global={{...options, x: -1000, delay: 100}} out:fly|global={{...options, x: -1000}}>
+        <BasicEditor />
+    </div>
     {:else if $activeTab === 'Advanced'}
-        <div class="adv-editor" in:fly|global={{...options, duration:500, x: 4000, delay: 100}} out:fly|global={{...options, x: 1000}}>    
-            <AdvancedEditor />
-        </div>
+    <div class="adv-editor" in:fly|global={{...options, duration:500, x: 4000, delay: 100}} out:fly|global={{...options, x: 1000}}>    
+        <AdvancedEditor />
+    </div>
     {/if}
+</body>
 
 <style>
 .adv-editor {
@@ -44,6 +46,10 @@
 .basic-editor {
     margin: 20px;
     z-index: 2;
+}
+
+body {
+    transition: all 0.5s ease;
 }
 
 </style>

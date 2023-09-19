@@ -4,8 +4,9 @@
     import { metaInfo, stringsInfo, conditionInfo } from "./constants";
     import { parse } from "../parser/parser";
     import { ruleName, meta, strings, condition, condtionOperator } from "$lib/stores";
-    import { slide } from "svelte/transition";
+    import { fly, scale, slide } from "svelte/transition";
     import { flip } from "svelte/animate";
+    import { linear } from "svelte/easing";
 
     let alertColor: any = "success";
     let alertMessage: string = "Copied to clipboard";
@@ -229,12 +230,12 @@
 
 {#if alertOpen}
     {#if alertColor == "success"}
-    <div class="custom-alert-success">
+    <div class="custom-alert-success" transition:slide|global={{duration:100}}>
         {alertMessage}
         <button class="close-button" on:click={() =>{alertOpen=false}}>&times;</button>
       </div>
     {:else if alertColor =="danger"}
-    <div class="custom-alert-danger">
+    <div class="custom-alert-danger" transition:slide|global={{duration:100}}>
         {alertMessage}
         <button class="close-button" on:click={() =>{alertOpen=false}}>&times;</button>
       </div>
@@ -357,5 +358,6 @@
     font-size: 30px;
     color: rgb(54, 54, 54);
   }
+
 </style>
 

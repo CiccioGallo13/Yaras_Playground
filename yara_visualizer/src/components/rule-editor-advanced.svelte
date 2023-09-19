@@ -3,6 +3,7 @@ import { onMount } from 'svelte';
 import { rulesTextArea } from '$lib/stores';
 import { get } from 'svelte/store';
 import { parse } from '../parser/parser';
+    import { slide } from 'svelte/transition';
 
 let textAreaElement;
 let errorMessage: any = '';
@@ -78,14 +79,14 @@ function calcWidth() {
 </div>
 {#if errorMessage !== ''}
   {#if errorMessage === 'Rule parsed successfully'}
-    <div class="message-info-ok">{errorMessage}</div>
+    <div class="message-info-ok" transition:slide|global={{duration:100}}>{errorMessage}</div>
   {:else}
-    <div class="message-info-error">
+    <div class="message-info-error" transition:slide|global={{duration:100}}>
       {#if !RegExp("not referenced in condition").test(errorMessage.message)}
         Line {errorMessage.location.start.line} column {errorMessage.location.start.column}. {errorMessage.message}
       {:else}
         {errorMessage.message}
-      {/if}
+       {/if}
       </div>
   {/if}
 {/if}
@@ -98,6 +99,7 @@ function calcWidth() {
   font-weight: 500;
   margin-top: 5px;
   padding: 7px 20px 7px 20px;
+  color: white;
 }
 
 .message-info-error {
@@ -107,6 +109,7 @@ function calcWidth() {
   font-weight: 500;
   margin-top: 5px;
   padding: 7px 20px 7px 20px;
+  color: white;
 }
 
 .text-editor {

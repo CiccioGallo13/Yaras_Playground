@@ -3,20 +3,19 @@
     import { _sendData, _highlightInstances, _highlightWordByOffset, _getFormattedData } from '$lib/utils';
     import { _encodings, _preProcessMatch } from './+page';
     import { page } from '$app/stores';
-    import { rulesTextArea, dataTextArea } from '$lib/stores';
+    import { rulesTextArea, dataTextArea, theme } from '$lib/stores';
     import { Utils } from 'dumbo-svelte/utils'
     import { get } from 'svelte/store';
     import { onMount } from 'svelte';
     import EncodingsTable from '../components/encodings-table.svelte';
     import type { HighlightedMatches, JsonRequest, JsonResponse, State } from '../model/model';
     import MatchingTable from '../components/matching-table.svelte';
-    import { fly } from 'svelte/transition';
+    import { fade, fly } from 'svelte/transition';
     import { linear } from 'svelte/easing';
 
     onMount(async () => {
         document.getElementsByTagName("body")[0].setAttribute("data-load", "complete");
     });
-    
     let dataFiles: FileList;
     let rulesFiles: FileList;
     let completeScan: boolean = false;
@@ -149,8 +148,6 @@
         });
 
     }
-
-    
 </script>
 
 <body>
@@ -164,10 +161,10 @@
 {/if}
 
 <div in:fly|global={{...options, duration: 500, x: 3000, delay: 10}} out:fly|global={{...options, x: -1000}}>
-<Card class="mx-auto" style="border-radius: 0; background-color: var(--color-verylight)">
+<Card class="mx-auto" style="border-radius: 0; background-color: var(--color-verylight); transition: background-color 500ms ease;">
     <CardBody>
         <Row cols={2}>
-            <Container style="background-color: var(--color-verylight); min-width:300pt; padding-right:40pt; padding-left:40pt;">
+            <Container style="background-color: var(--color-verylight); min-width:300pt; padding-right:40pt; padding-left:40pt; transition: background-color 500ms ease">
                 <Col sm={{ size: 'auto', offset: 0 }}>
                     <FormGroup>
                         <Label for="rulesTextArea">Rules</Label>
@@ -249,6 +246,10 @@
 </body>
 
 <style>
+
+body {
+    transition: all 0.5s ease;
+}
     .centered {
         display: flex;
         justify-content: center;

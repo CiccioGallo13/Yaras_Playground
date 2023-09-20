@@ -132,7 +132,7 @@
                 setTimeout(() => {
                     loadingResponse = false;
                     renderTable = true;
-                }, 0);
+                }, 400);
             }else{
                     setTimeout(() => {
                 loadingResponse = false;

@@ -217,7 +217,7 @@
     </div>
     
     <div class="centered">
-        <Col sm={{ size: 'auto'}}>
+        <Col sm={{ size: 'auto'}} class="zoom-hover">
             <Button style="width: 130pt; color: var(--color-lightest); background-color: var(--color-strongest)" on:click={scanData}>Scan</Button>
         </Col>
     </div>

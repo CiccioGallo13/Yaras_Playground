@@ -1,11 +1,10 @@
 <script lang="ts">
-    import { Styles, Input, Button, Alert, Icon, Toast, ToastHeader, ToastBody } from "sveltestrap";
+    import { Styles, Input, Button, Alert, Icon, Toast, ToastHeader, ToastBody, Tooltip } from "sveltestrap";
     import { copyText } from "svelte-copy";
     import { metaInfo, stringsInfo, conditionInfo } from "./constants";
     import { parse } from "../parser/parser";
     import { ruleName, meta, strings, condition, condtionOperator } from "$lib/stores";
-    import { fly, scale, slide } from "svelte/transition";
-    import { flip } from "svelte/animate";
+    import { fade, fly, scale, slide } from "svelte/transition";
     import { linear } from "svelte/easing";
 
     let alertColor: any = "success";
@@ -111,7 +110,7 @@
 
 {#if toastOpen}
 <!-- svelte-ignore a11y-click-events-have-key-events -->
-<div class="overlay" on:click={toggle}>
+<div class="overlay" on:click={toggle} in:fade|global={{duration:300, easing: linear}} out:fade|global={{duration:300, easing: linear}}>
     <div on:click|stopPropagation={e => e.stopPropagation()}>
       <Toast isOpen={toastOpen} style="position: relative; overflow: auto; width: 50vw; height: 70vh; background-color: var(--color-lighter); ">
           <ToastHeader toggle={toggle} style="color: black;">
@@ -134,8 +133,9 @@
 
 
     <div class="block">
-            meta:<Button color="warning" on:click={() => {toastHeader = "Metadata"; toastBody = metaInfo; toggle()}}
+            meta:<Button id="info-button-meta" class="zoom-hover" color="warning" on:click={() => {toastHeader = "Metadata"; toastBody = metaInfo; toggle()}}
             style="width:25px; height:25px; border-radius: 20px; display:inline-flex; align-items: center; justify-content: center; font-weight:500; margin-left:50px;">i</Button>
+            <Tooltip target="info-button-meta" placement="top">Info</Tooltip>
         {#each $meta as _meta, i}
             <div class="instance" transition:slide|local={{duration:250}}>
                 <div class="meta-name">
@@ -148,18 +148,19 @@
                     <Input style="height:30px;" type="text" bind:value={_meta.right} />
                 </div>
                 <Button style="margin-left: 20px; height: 30px; width: 70px; background-color: #943131; display:flex; align-items: center; justify-content: center;" 
-                on:click={() => {removeElement('meta', i)}}>remove</Button>
+                on:click={() => {removeElement('meta', i)}} class="zoom-hover">remove</Button>
             </div>
         {/each}
     </div>
-    <Button id="add-meta" on:click={() => {$meta = [...$meta, {left: "", operator: "=", right: ""}]}}
+    <Button id="add-meta" class="zoom-hover" on:click={() => {$meta = [...$meta, {left: "", operator: "=", right: ""}]}}
         style="color: var(--color-lightest); background-color: var(--color-strongest); margin-left:40px;">
         <Icon name="plus-lg" />
         Add Meta</Button>
 
     <div class="block">
-        strings:<Button color="warning" on:click={() => {toastHeader = "Strings"; toastBody = stringsInfo; toggle()}}
+        strings:<Button id="info-button-strings" class="zoom-hover" color="warning" on:click={() => {toastHeader = "Strings"; toastBody = stringsInfo; toggle()}}
         style="width:25px; height:25px; border-radius: 20px; display:inline-flex; align-items: center; justify-content: center; font-weight:500; margin-left:40px;">i</Button>
+        <Tooltip target="info-button-strings" placement="top">Info</Tooltip>
         {#each $strings as _string, i}
             <div class="instance" transition:slide|local={{duration:250}}>
                 <div class="string-name">
@@ -172,23 +173,24 @@
                     <Input style="height:30px; width:max-content;" type="text" bind:value={_string.right} />
                 </div>
                 <Button style="margin-left: 20px; height: 30px; width: 70px; background-color: #943131; display:flex; align-items: center; justify-content: center;" 
-                on:click={() => {removeElement('strings', i)}}>remove</Button>
+                on:click={() => {removeElement('strings', i)}} class="zoom-hover">remove</Button>
             </div>
         {/each}
     </div>
     <Button id="add-string" on:click={() => {$strings = [...$strings, {left: "", operator: "=", right: ""}]}}
-        style="color: var(--color-lightest); background-color: var(--color-strongest); margin-left:40px;">
+        style="color: var(--color-lightest); background-color: var(--color-strongest); margin-left:40px;" class="zoom-hover">
         <Icon name="plus-lg" />
         Add String</Button>
 
     <div class="block">
-        condition:<Button color="warning" on:click={() =>{toastHeader = "Condition"; toastBody = conditionInfo; toggle()}}
+        condition:<Button id="info-button-cond" class="zoom-hover" color="warning" on:click={() =>{toastHeader = "Condition"; toastBody = conditionInfo; toggle()}}
         style="width:25px; height:25px; border-radius: 20px; display:inline-flex; align-items: center; justify-content: center; font-weight:500; margin-left:20px;">i</Button>
+        <Tooltip target="info-button-cond" placement="top">Info</Tooltip>
         <div class="condition">
             {#each $condition as _ , i}
             <div class="cond-instance" transition:slide|local={{duration:250}}>
             {#if i > 0}
-              <div class="input-container">
+              <div class="input-container zoom-hover">
                 <Input type="select" style="margin:0 20px;" bind:value={$condtionOperator[i-1]} >
                   <option>Select operator</option>
                   <option>and</option>
@@ -197,7 +199,7 @@
               </div>
             {/if}
         
-            <div class="input-container">
+            <div class="input-container zoom-hover">
               <Input type="select" style="margin:0 20px;" bind:value={_}>
                 <option> Select variable </option>
                 {#each $strings as string}
@@ -210,12 +212,12 @@
 
         </div>
         <Button id="add-cond" on:click={() => {$condition = [...$condition, ""]; $condtionOperator =[...$condtionOperator, "Select operator"]}}
-            style="color: var(--color-lightest); background-color: var(--color-strongest)">
+            style="color: var(--color-lightest); background-color: var(--color-strongest)" class="zoom-hover">
             <Icon name="plus-lg" />
             Add Condition</Button>
         {#if $condition.length > 1}
             <Button id="rm-cond" on:click={() => {removeElement('condition', $condition.length-1)}}
-                style=" background-color: #943131;">
+                style=" background-color: #943131; margin-left:10px;" class="zoom-hover">
                 <Icon name="dash-lg" />
                 Remove Condition</Button>
         {/if}
@@ -243,13 +245,13 @@
 
 {/if}
 <div class="button-container">
-    <Button id="clear-button" on:click={() => {$meta = []; $strings = []; $condition = [""]; $condtionOperator = []; $ruleName = "rule_name"}}
+    <Button id="clear-button" class="zoom-hover" on:click={() => {$meta = []; $strings = []; $condition = [""]; $condtionOperator = []; $ruleName = "rule_name"}}
         style="background-color: var(--color-strongest); border-color: var(--color-strongest); color: var(--color-lightest); margin-right: 20px;">
     <Icon name="trash" />
     Clear</Button>
     
-    <Button id="copy-button" on:click={copyToClipboard}
-    style="background-color: var(--color-active); border-color: var(--color-active); color: var(--color-lightest);">
+    <Button id="copy-button" on:click={copyToClipboard} class="zoom-hover"
+    style="background-color: var(--color-active); border-color: var(--color-active); color: var(--color-lightest);" >
     <Icon name="files" />
     Copy rule</Button>
 </div>
@@ -268,6 +270,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: 0.4 ease;
   }
     .instance {
         display: flex;
@@ -275,8 +278,7 @@
         align-items: start;
         justify-content: flex-start;
         max-width: 70vw;
-        margin: 20px;
-        
+        margin: 20px; 
     }
 
     .cond-instance {
@@ -357,6 +359,19 @@
     justify-content: center;
     font-size: 30px;
     color: rgb(54, 54, 54);
+    transition: 0.2 ease;
+  }
+
+  .close-button:hover {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    color: rgb(209, 209, 209);
+    transition: 0.2 ease;
   }
 
 </style>

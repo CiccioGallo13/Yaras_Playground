@@ -13,10 +13,12 @@
 <Navbar style="background-color: hsl(0deg, 0%, 30%);" expand="md">
     <div class="left-group">
         <!-- svelte-ignore a11y-click-events-have-key-events -->
-        <p id="title" on:click={() => {goto("/")}} >YARA'S PLAYGROUND</p>
+        <p id="title" class="zoom-hover" on:click={() => {goto("/")}} >YARA'S PLAYGROUND</p>
         
         <div class="vl"></div>
-        <NavbarBrand style="color: white; margin-left: 20px;" href="/editor"> Rule Editor </NavbarBrand>
+        <div class="zoom-hover">
+            <NavbarBrand style="color: white; margin-left: 20px;" href="/editor"> Rule Editor </NavbarBrand>
+        </div>
         
     </div>
     
@@ -54,5 +56,5 @@
         height: 30px;
         margin-left: 20px;
     }
-
+        
 </style>

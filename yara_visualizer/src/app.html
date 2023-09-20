@@ -26,5 +26,30 @@
         transform: scale(1.1);
         transition: all 0.2s ease;
     }
+
+
+  pre > mark {
+	-webkit-animation: 1s highlight 0.5s 1 normal forwards;
+			animation: 1s highlight 0.5s 1 normal forwards;
+	color: var(--color-strongest);
+	background-color: none;
+	background: linear-gradient(90deg, #fef790db 50%, rgba(255, 255, 255, 0) 50%);
+	background-size: 200% 100%;
+	background-position: 100% 0;
+	}
+
+@-webkit-keyframes highlight {
+  to {
+    background-position: 0 0;
+  }
+}
+
+@keyframes highlight {
+  to {
+    background-position: 0 0;
+	color: black;
+  }
+}
+
 	</style>
 </html>

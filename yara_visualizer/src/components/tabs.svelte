@@ -2,7 +2,7 @@
     import { createEventDispatcher } from 'svelte';
     import { Styles, Icon } from 'sveltestrap';
     import type { TabItem } from '../model/model';
-    import { fly } from 'svelte/transition';
+    import { fly, slide } from 'svelte/transition';
     import { linear } from 'svelte/easing';
 
     const dispatch = createEventDispatcher();
@@ -15,7 +15,7 @@
 
 <Styles />
 
-<div class="tabs" in:fly|global={{...options, x: -1000, delay: 100}} out:fly|global={{...options, x: -1000}}>
+<div class="tabs" in:slide|global={{...options, axis: "y",delay: 100}} out:slide|global={{...options, axis:"y"}}>
     <ul>
         {#each tabItems as item}
             <!-- svelte-ignore a11y-click-events-have-key-events -->

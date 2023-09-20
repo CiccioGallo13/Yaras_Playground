@@ -10,7 +10,7 @@
     import EncodingsTable from '../components/encodings-table.svelte';
     import type { HighlightedMatches, JsonRequest, JsonResponse, State } from '../model/model';
     import MatchingTable from '../components/matching-table.svelte';
-    import { fade, fly } from 'svelte/transition';
+    import { draw, fade, fly, slide } from 'svelte/transition';
     import { linear } from 'svelte/easing';
 
     onMount(async () => {
@@ -160,7 +160,7 @@
     </div>
 {/if}
 
-<div in:fly|global={{...options, duration: 500, x: 3000, delay: 10}} out:fly|global={{...options, x: -1000}}>
+<div in:slide|global={{...options, duration: 400, axis:"y", delay: 100}} out:slide|global={{...options, axis:"y"}}>
 <Card class="mx-auto" style="border-radius: 0; background-color: var(--color-verylight); transition: background-color 500ms ease;">
     <CardBody>
         <Row cols={2}>
@@ -224,13 +224,14 @@
     </Row>
 </CardFooter>
 </Card>
+</div>
 {#if loadingResponse}
 <div class="spinner-load">
     <Spinner type="grow" style="background-color: #bc66f2;" />
 </div>
 {/if}
 {#if renderTable}
-<div in:fly|global={{...options, duration: 500, x: -500, delay: 0}}>
+<div in:slide|global={{...options, duration: 500, axis:"y", delay: 0}} out:slide|global={{...options, axis:"y"}}>
     <Container>
         
         <EncodingsTable {highlightedText} {matches} />
@@ -242,7 +243,6 @@
     </Container>
 </div>
 {/if}
-</div>
 </body>
 
 <style>

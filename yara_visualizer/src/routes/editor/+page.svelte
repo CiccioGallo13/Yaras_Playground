@@ -1,6 +1,6 @@
 <script lang="ts">
     import { Styles } from "sveltestrap";
-    import { fly } from 'svelte/transition';
+    import { fly, slide } from 'svelte/transition';
     import { linear } from 'svelte/easing';
     import Tabs from "../../components/tabs.svelte";
     import AdvancedEditor from "../../components/rule-editor-advanced.svelte";
@@ -18,7 +18,7 @@
         $activeTab = event.detail;
     };
 
-	let options = {duration: 300, easing: linear};
+	let options = {duration: 300,easing: linear};
 
 </script>
 
@@ -27,11 +27,11 @@
 <body>
     <Tabs tabItems = {tabItems} activeItem = {$activeTab} on:tabChange={triggerTabChange} />
     {#if $activeTab === 'Basic'}
-    <div class="basic-editor" in:fly|global={{...options, x: -1000, delay: 100}} out:fly|global={{...options, x: -1000}}>
+    <div class="basic-editor" in:slide|global={{...options, axis: "y",delay: 100}} out:slide|global={{...options, axis:"y"}}>
         <BasicEditor />
     </div>
     {:else if $activeTab === 'Advanced'}
-    <div class="adv-editor" in:fly|global={{...options, duration:500, x: 4000, delay: 100}} out:fly|global={{...options, x: 1000}}>    
+    <div class="adv-editor" in:slide|global={{...options, axis: "y",delay: 100}} out:slide|global={{...options, axis:"y"}}>    
         <AdvancedEditor />
     </div>
     {/if}

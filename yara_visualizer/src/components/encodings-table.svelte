@@ -6,6 +6,15 @@
     export let highlightedText: Map<string, HighlightedMatches>
     export let matches: JsonResponse
 
+    let preClassSpaces = "scrollable-content-spaces";
+    let preClassNoSpaces = "scrollable-content-nospaces";
+
+
+    setTimeout(() => {
+        preClassSpaces = "scrollable-content-spaces aaa"
+        preClassNoSpaces = "scrollable-content-nospaces aaa"
+    }, 300);
+
 </script>
 
 <div id= "table-results" class="options">
@@ -23,9 +32,9 @@
                 <td>
                     <div>
                         {#if encoding === 'hex' || encoding === 'binary' || encoding === 'ascii'}
-                            <pre class="scrollable-content-spaces">{@html highlightedText.get(encoding)?.highlighted_string}</pre>
+                            <pre class={preClassSpaces}>{@html highlightedText.get(encoding)?.highlighted_string}</pre>
                         {:else}
-                            <pre class="scrollable-content-nospaces">{@html highlightedText.get(encoding)?.highlighted_string}</pre>
+                            <pre class={preClassNoSpaces}>{@html highlightedText.get(encoding)?.highlighted_string}</pre>
                         {/if}
                     </div>
                 </td>
@@ -80,4 +89,5 @@
     td {
         color: var(--color-strongest);
     }
+
 </style>

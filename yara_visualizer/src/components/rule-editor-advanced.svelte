@@ -3,10 +3,14 @@ import { onMount } from 'svelte';
 import { rulesTextArea } from '$lib/stores';
 import { get } from 'svelte/store';
 import { parse } from '../parser/parser';
-    import { slide } from 'svelte/transition';
+import { slide } from 'svelte/transition';
 
 let textAreaElement;
 let errorMessage: any = '';
+
+if($rulesTextArea.length > 0) {
+  parseRules();
+}
 
 onMount(async () => {
     textAreaElement = document.querySelector('textarea')!
@@ -39,6 +43,10 @@ function handleKeyDown(event: KeyboardEvent) {
   }
 
   function parseRules() {
+    if($rulesTextArea.length === 0) {
+      errorMessage = '';
+      return;
+    }
     errorMessage = parse(get(rulesTextArea));
   }
 

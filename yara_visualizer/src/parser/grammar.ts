@@ -157,19 +157,21 @@ InIntervalFor
     { return {prefix: def, left: arg, operator:op, right: int1} }
 
 ForVariableOperation
-= _ lb:"("? _ c1:(DataAccess/ImportFunction/IntegerFor/ConditionVariableNumeric/VirtualAddress/CondInteger/String/SpecialForVariable) _ rb:")"? _ op:ConditionOperatorNumeric _ 
-     c2:("(" _ c:(DataAccess/ImportFunction/IntegerFor/ConditionVariableNumeric / VirtualAddress /CondInteger / String / SpecialForVariable) _ ")" {return c}/(ForVariable/DataAccess/ImportFunction/ConditionVariableNumeric / VirtualAddress /CondInteger / String / Integer/ SpecialForVariable))
+= _ lb:"("? _ c1:(DataAccess/ImportFunction/ForInternalVariable/IntegerFor/ConditionVariableNumeric/VirtualAddress/CondInteger/String/SpecialForVariable) _ rb:")"? _ op:ConditionOperatorNumeric _ 
+     c2:("(" _ c:(DataAccess/ImportFunction/ForInternalVariable/IntegerFor/ConditionVariableNumeric / VirtualAddress /CondInteger / String / SpecialForVariable) _ ")" {return c}/(ForVariable/DataAccess/ImportFunction/ConditionVariableNumeric / VirtualAddress /CondInteger / String / Integer/ SpecialForVariable))
 	{ if((lb != null && rb != null) || (lb == null && rb == null) )
     	return {left: c1, operator: op, right: c2};
       else
        	error("syntax error") }
 
+ForInternalVariable
+= _ VariableNameFor _
     
 ForVariable
 = ([@!]? (VariableName ".")? VariableName ("[" _ (VariableNameFor/[0-9]+) _ "]")?/SpecialForVariable) ("." VariableName)?  {return text().trim()}
 
 ForInterval
- = _ val:("any"/"all"/"none"/Integer) _ name1:VariableNameFor _ name2:("," _ v:VariableName {return v})* _ "in" _ 
+ = _ val:("any"/"all"/"none"/Integer) _ name1:VariableNameFor _ name2:("," _ v:VariableNameFor {return v})* _ "in" _ 
  "(" _ int1:(i1:ConditionVariableInterval ".." i2:ConditionVariableInterval {return [i1,"..",i2]} / 
  	     n1:Integer _ n2:("," _ _n:Integer {return _n;})* {return [n1].concat(n2)} /
      	 n1:String _ n2:("," _ _n:String {return _n;})* {return [n1].concat(n2)} /
